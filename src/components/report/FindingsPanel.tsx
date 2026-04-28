@@ -1,52 +1,74 @@
 "use client";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { X } from "lucide-react";
 import { useState } from "react";
 import { Finding, OrganScore } from "@/lib/api";
-import SeverityBadge from "@/components/ui/SeverityBadge";
 import { cn } from "@/lib/utils";
 
-function FindingCard({ finding }: { finding: Finding }) {
-  const [open, setOpen] = useState(false);
+const SEVERITY_COLORS: Record<string, string> = {
+  critical: "bg-red-100 text-red-700",
+  major: "bg-orange-100 text-orange-700",
+  minor: "bg-yellow-100 text-yellow-700",
+  normal: "bg-emerald-100 text-emerald-700",
+};
 
+function SevBadge({ severity }: { severity?: string }) {
+  const s = severity?.toLowerCase() ?? "normal";
   return (
-    <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-start justify-between gap-3 p-4 text-left hover:bg-gray-50 transition-colors"
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <SeverityBadge severity={finding.severity} />
-            <span className="text-xs text-gray-400">{finding.test_type}</span>
-          </div>
-          <p className="mt-1 text-sm font-semibold text-gray-800">{finding.name}</p>
-          {finding.value && (
-            <p className="mt-0.5 text-xs text-gray-500">
-              {finding.value}{finding.unit ? ` ${finding.unit}` : ""}
-              {finding.normal_range ? ` · Normal: ${finding.normal_range}` : ""}
-            </p>
-          )}
-        </div>
-        {open ? <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1" /> : <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1" />}
-      </button>
+    <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide", SEVERITY_COLORS[s] ?? SEVERITY_COLORS.normal)}>
+      {severity ?? "Normal"}
+    </span>
+  );
+}
 
-      {open && (finding.description || finding.clinical_findings || finding.recommendations) && (
-        <div className="border-t border-gray-100 px-4 pb-4 pt-3 space-y-3 text-sm">
-          {finding.description && (
-            <p className="text-gray-600 leading-relaxed">{finding.description}</p>
-          )}
-          {finding.clinical_findings && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Clinical Findings</p>
-              <p className="text-gray-600 leading-relaxed">{finding.clinical_findings}</p>
-            </div>
-          )}
-          {finding.recommendations && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Recommendations</p>
-              <p className="text-gray-600 leading-relaxed">{finding.recommendations}</p>
-            </div>
-          )}
+function FindingCard({ finding }: { finding: Finding }) {
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden mb-3">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <h3 className="text-base font-bold text-gray-900 leading-snug">{finding.name}</h3>
+        <SevBadge severity={finding.severity} />
+      </div>
+
+      {/* Description */}
+      {finding.description && (
+        <p className="px-5 pb-4 text-sm text-gray-500 leading-relaxed">{finding.description}</p>
+      )}
+
+      {/* Value vs Normal */}
+      {(finding.value || finding.normal_range) && (
+        <div className="mx-5 mb-4 flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-gray-400 font-medium mb-0.5">{finding.name}</p>
+            <p className="text-xs text-gray-400">
+              Normal: <span className="font-semibold text-gray-600">{finding.normal_range ?? "—"}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2 ml-3">
+            <span className="text-lg font-extrabold text-gray-900">
+              {finding.value ?? "—"}{finding.unit ? ` ${finding.unit}` : ""}
+            </span>
+            <SevBadge severity={finding.severity} />
+          </div>
+        </div>
+      )}
+
+      {/* Clinical Findings */}
+      {finding.clinical_findings && (
+        <div className="px-5 pb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Clinical Findings</p>
+          <div className="rounded-xl bg-gray-50 px-4 py-3">
+            <p className="text-sm text-gray-600 leading-relaxed">{finding.clinical_findings}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {finding.recommendations && (
+        <div className="px-5 pb-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Recommendations</p>
+          <div className="rounded-xl bg-gray-50 px-4 py-3">
+            <p className="text-sm text-gray-600 leading-relaxed">{finding.recommendations}</p>
+          </div>
         </div>
       )}
     </div>
@@ -59,32 +81,44 @@ interface Props {
   onClose: () => void;
 }
 
-export default function FindingsPanel({ organ, findings, onClose }: Props) {
+export default function FindingsPanel({ findings, onClose }: Props) {
   const [filter, setFilter] = useState<string>("all");
 
-  const filtered = filter === "all" ? findings : findings.filter((f) => f.severity?.toLowerCase() === filter);
   const severities = ["all", "critical", "major", "minor", "normal"];
+  const counts = Object.fromEntries(
+    severities.map((s) => [s, s === "all" ? findings.length : findings.filter((f) => f.severity?.toLowerCase() === s).length])
+  );
+
+  const filtered = filter === "all" ? findings : findings.filter((f) => f.severity?.toLowerCase() === filter);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl flex flex-col max-h-[85vh]">
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Right-side drawer */}
+      <div className="fixed right-0 inset-y-0 z-50 flex w-full max-w-md flex-col bg-gray-50 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4">
           <div>
-            {organ && <p className="text-2xl mb-1">{organ.icon}</p>}
-            <h2 className="text-xl font-bold text-gray-900">{organ?.organ_name ?? "All"} Findings</h2>
-            <p className="text-sm text-gray-500 mt-0.5">{findings.length} finding{findings.length !== 1 ? "s" : ""} total</p>
+            <h2 className="text-lg font-bold text-gray-900">Overall Report by Severity</h2>
+            <p className="text-xs text-gray-400 mt-0.5">{findings.length} total findings</p>
           </div>
-          <button onClick={onClose} className="rounded-full p-2 hover:bg-gray-100 transition-colors">
-            <X className="h-5 w-5" />
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 hover:bg-gray-100 transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-2 overflow-x-auto px-6 py-3 border-b border-gray-100">
+        {/* Severity filter tabs */}
+        <div className="flex gap-2 overflow-x-auto border-b border-gray-200 bg-white px-5 py-3">
           {severities.map((s) => {
-            const count = s === "all" ? findings.length : findings.filter((f) => f.severity?.toLowerCase() === s).length;
-            if (count === 0 && s !== "all") return null;
+            if (counts[s] === 0 && s !== "all") return null;
             return (
               <button
                 key={s}
@@ -92,25 +126,25 @@ export default function FindingsPanel({ organ, findings, onClose }: Props) {
                 className={cn(
                   "flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-all",
                   filter === s
-                    ? "bg-zen-800 text-white"
+                    ? "bg-gray-900 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 )}
               >
-                {s} ({count})
+                {s === "all" ? `All (${counts[s]})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${counts[s]})`}
               </button>
             );
           })}
         </div>
 
         {/* Findings list */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4">
           {filtered.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">No findings for this filter</p>
+            <p className="py-16 text-center text-sm text-gray-400">No findings for this filter</p>
           ) : (
             filtered.map((f) => <FindingCard key={f.id} finding={f} />)
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

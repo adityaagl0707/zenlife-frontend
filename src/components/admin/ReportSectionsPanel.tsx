@@ -1,0 +1,474 @@
+"use client";
+import { useState, useRef, useEffect } from "react";
+import { Upload, Sparkles, Save, Download, CheckCircle2, AlertTriangle, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com";
+
+const SEVERITY_COLORS: Record<string, string> = {
+  critical: "bg-red-100 text-red-700 border-red-200",
+  major:    "bg-orange-100 text-orange-700 border-orange-200",
+  minor:    "bg-yellow-100 text-yellow-700 border-yellow-200",
+  normal:   "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
+const SECTION_META: Record<string, { label: string; icon: string; has_key_findings: boolean }> = {
+  blood:         { label: "Blood Report",         icon: "🩸", has_key_findings: false },
+  urine:         { label: "Urine Analysis",       icon: "🧪", has_key_findings: false },
+  dexa:          { label: "DEXA Scan",            icon: "🦴", has_key_findings: true },
+  calcium_score: { label: "Calcium Score",        icon: "💛", has_key_findings: true },
+  ecg:           { label: "ECG Report",           icon: "💓", has_key_findings: false },
+  chest_xray:    { label: "Chest X-Ray",          icon: "🫁", has_key_findings: true },
+  usg:           { label: "USG Report",           icon: "🔊", has_key_findings: true },
+  mri:           { label: "MRI Report",           icon: "🧲", has_key_findings: true },
+};
+
+const SECTION_ORDER = ["blood", "urine", "dexa", "calcium_score", "ecg", "chest_xray", "usg", "mri"];
+
+type ParamDef = { name: string; unit: string; normal: string };
+type ParamValue = { value: string; severity: string; clinical_findings: string; recommendations: string };
+type SectionData = { key_findings: string; parameters: Record<string, ParamValue>; param_definitions: ParamDef[] };
+
+function SeverityBadge({ sev }: { sev: string }) {
+  return (
+    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase border", SEVERITY_COLORS[sev] || SEVERITY_COLORS.normal)}>
+      {sev}
+    </span>
+  );
+}
+
+function ParamRow({
+  def,
+  val,
+  onChange,
+}: {
+  def: ParamDef;
+  val: ParamValue;
+  onChange: (v: ParamValue) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const sev = val.severity || "normal";
+
+  return (
+    <div className={cn("rounded-xl border mb-2 overflow-hidden", sev === "critical" ? "border-red-200" : sev === "major" ? "border-orange-200" : sev === "minor" ? "border-yellow-200" : "border-gray-100")}>
+      {/* Header row */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-white">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-800 truncate">{def.name}</p>
+          <p className="text-xs text-gray-400">{def.unit ? `Unit: ${def.unit}` : ""}{def.normal ? ` · Normal: ${def.normal}` : ""}</p>
+        </div>
+        <input
+          type="text"
+          value={val.value || ""}
+          onChange={(e) => onChange({ ...val, value: e.target.value })}
+          placeholder="Value"
+          className="w-28 rounded-lg border border-gray-200 px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-zen-500"
+        />
+        <select
+          value={sev}
+          onChange={(e) => onChange({ ...val, severity: e.target.value })}
+          className={cn("rounded-lg border px-2 py-1.5 text-xs font-semibold focus:outline-none cursor-pointer", SEVERITY_COLORS[sev] || SEVERITY_COLORS.normal)}
+        >
+          {["normal", "minor", "major", "critical"].map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-600">
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+      </div>
+
+      {/* Expanded: clinical findings + recommendations */}
+      {expanded && (
+        <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 space-y-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Clinical Findings</p>
+            <textarea
+              value={val.clinical_findings || ""}
+              onChange={(e) => onChange({ ...val, clinical_findings: e.target.value })}
+              rows={2}
+              placeholder="AI-generated or manually entered clinical interpretation..."
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zen-500 resize-none"
+            />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Recommendations</p>
+            <textarea
+              value={val.recommendations || ""}
+              onChange={(e) => onChange({ ...val, recommendations: e.target.value })}
+              rows={2}
+              placeholder="AI-generated or manually entered recommendations..."
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zen-500 resize-none"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SectionPanel({
+  reportId,
+  sectionType,
+  initialData,
+  onSaved,
+}: {
+  reportId: number;
+  sectionType: string;
+  initialData: SectionData | null;
+  onSaved: () => void;
+}) {
+  const meta = SECTION_META[sectionType];
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [keyFindings, setKeyFindings] = useState(initialData?.key_findings || "");
+  const [params, setParams] = useState<Record<string, ParamValue>>(() => {
+    const saved = initialData?.parameters || {};
+    const defs = initialData?.param_definitions || [];
+    const merged: Record<string, ParamValue> = {};
+    for (const d of defs) {
+      merged[d.name] = saved[d.name] || { value: "", severity: "normal", clinical_findings: "", recommendations: "" };
+    }
+    return merged;
+  });
+  const [defs, setDefs] = useState<ParamDef[]>(initialData?.param_definitions || []);
+  const [extracting, setExtracting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [filterSev, setFilterSev] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const filteredDefs = defs.filter((d) => {
+    const matchSev = filterSev === "all" || (params[d.name]?.severity || "normal") === filterSev;
+    const matchSearch = d.name.toLowerCase().includes(search.toLowerCase());
+    return matchSev && matchSearch;
+  });
+
+  // Counts per severity
+  const counts = { critical: 0, major: 0, minor: 0, normal: 0 };
+  for (const d of defs) {
+    const s = (params[d.name]?.severity || "normal") as keyof typeof counts;
+    counts[s] = (counts[s] || 0) + 1;
+  }
+
+  async function handleExtract(file: File) {
+    setExtracting(true);
+    setMsg("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}/extract`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Extraction failed");
+      }
+      const data = await res.json();
+      const extracted = data.extracted || {};
+      setParams((prev) => {
+        const updated = { ...prev };
+        for (const [name, val] of Object.entries(extracted)) {
+          if (typeof val === "object" && val !== null) {
+            updated[name] = val as ParamValue;
+          }
+        }
+        return updated;
+      });
+      setMsg("✓ AI extraction complete — review values below and save.");
+    } catch (e: unknown) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setMsg("");
+    try {
+      const res = await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key_findings: keyFindings, parameters: params }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      setMsg("✓ Saved successfully.");
+      onSaved();
+    } catch (e: unknown) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleImport() {
+    setImporting(true);
+    setMsg("");
+    try {
+      // Save first
+      await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key_findings: keyFindings, parameters: params }),
+      });
+      // Then import
+      const res = await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}/import-findings`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      setMsg(`✓ Imported ${data.imported} findings to report.`);
+      onSaved();
+    } catch (e: unknown) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  const filledCount = defs.filter((d) => params[d.name]?.value && params[d.name]?.value !== "Not Found").length;
+
+  return (
+    <div className="space-y-5">
+      {/* Upload + Extract */}
+      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5">
+        <p className="text-sm font-semibold text-gray-700 mb-3">Upload {meta.label} (PDF or image)</p>
+        <div className="flex flex-wrap gap-3">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleExtract(file);
+              e.target.value = "";
+            }}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={extracting}
+            className="flex items-center gap-2 rounded-xl bg-zen-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zen-700 disabled:opacity-50 transition-colors"
+          >
+            {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {extracting ? "Extracting with AI…" : "Upload & Extract with AI"}
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={extracting}
+            className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Upload className="h-4 w-4" />
+            Upload only
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-gray-400">AI reads the report and auto-fills all parameters below. Review and correct before saving.</p>
+      </div>
+
+      {/* Key Findings */}
+      {meta.has_key_findings && (
+        <div>
+          <p className="text-sm font-semibold text-gray-700 mb-2">Key Findings / Impression</p>
+          <textarea
+            value={keyFindings}
+            onChange={(e) => setKeyFindings(e.target.value)}
+            rows={3}
+            placeholder={`Enter the key findings / radiologist impression from the ${meta.label}...`}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-zen-500 resize-none"
+          />
+        </div>
+      )}
+
+      {/* Parameter Review Table */}
+      <div>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <p className="text-sm font-semibold text-gray-700">
+              Parameters — {filledCount}/{defs.length} filled
+            </p>
+            <div className="flex gap-3 mt-1 text-xs">
+              {(["critical", "major", "minor", "normal"] as const).map((s) => (
+                <span key={s} className={cn("font-semibold", { critical: "text-red-600", major: "text-orange-600", minor: "text-yellow-600", normal: "text-emerald-600" }[s])}>
+                  {s.charAt(0).toUpperCase()}: {counts[s]}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search parameter…"
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zen-500"
+            />
+            {["all", "critical", "major", "minor", "normal"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilterSev(s)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-semibold capitalize transition-all",
+                  filterSev === s ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="max-h-[480px] overflow-y-auto pr-1">
+          {filteredDefs.length === 0 ? (
+            <p className="text-center text-sm text-gray-400 py-8">No parameters match your filter.</p>
+          ) : (
+            filteredDefs.map((d) => (
+              <ParamRow
+                key={d.name}
+                def={d}
+                val={params[d.name] || { value: "", severity: "normal", clinical_findings: "", recommendations: "" }}
+                onChange={(v) => setParams((prev) => ({ ...prev, [d.name]: v }))}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Action bar */}
+      {msg && (
+        <div className={cn("rounded-xl px-4 py-3 text-sm", msg.startsWith("Error") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700")}>
+          {msg}
+        </div>
+      )}
+      <div className="flex gap-3 flex-wrap">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 rounded-xl bg-zen-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zen-700 disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Save {meta.label}
+        </button>
+        <button
+          onClick={handleImport}
+          disabled={importing}
+          className="flex items-center gap-2 rounded-xl border border-zen-800 px-5 py-2.5 text-sm font-semibold text-zen-800 hover:bg-zen-50 disabled:opacity-50"
+        >
+          {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+          Import to Report Findings
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function ReportSectionsPanel({ reportId }: { reportId: number }) {
+  const [activeSection, setActiveSection] = useState("blood");
+  const [allSections, setAllSections] = useState<Record<string, SectionData>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  async function loadAll() {
+    setLoading(true);
+    try {
+      // Load saved parameters for all sections
+      const [savedRes, defsRes] = await Promise.all([
+        fetch(`${API}/api/v1/admin/reports/${reportId}/sections`),
+        fetch(`${API}/api/v1/admin/section-params`),
+      ]);
+      const saved = savedRes.ok ? await savedRes.json() : {};
+      const defs = defsRes.ok ? await defsRes.json() : { parameters: {} };
+
+      const merged: Record<string, SectionData> = {};
+      for (const st of SECTION_ORDER) {
+        merged[st] = {
+          key_findings: saved[st]?.key_findings || "",
+          parameters: saved[st]?.parameters || {},
+          param_definitions: defs.parameters[st] || [],
+        };
+      }
+      setAllSections(merged);
+    } catch {
+      setError("Failed to load report sections.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { loadAll(); }, [reportId]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-16">
+      <Loader2 className="h-6 w-6 animate-spin text-zen-600" />
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+      <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+      {error}
+    </div>
+  );
+
+  // Compute filled counts per section for tab badges
+  const sectionFillCounts: Record<string, number> = {};
+  for (const st of SECTION_ORDER) {
+    const data = allSections[st];
+    sectionFillCounts[st] = data
+      ? Object.values(data.parameters).filter((v) => (v as ParamValue).value && (v as ParamValue).value !== "Not Found").length
+      : 0;
+  }
+
+  return (
+    <div className="flex gap-0 min-h-[600px]">
+      {/* Left sidebar: section tabs */}
+      <div className="w-48 flex-shrink-0 border-r border-gray-100 pr-3 space-y-1">
+        {SECTION_ORDER.map((st) => {
+          const m = SECTION_META[st];
+          const filled = sectionFillCounts[st];
+          const total = allSections[st]?.param_definitions?.length || 0;
+          return (
+            <button
+              key={st}
+              onClick={() => setActiveSection(st)}
+              className={cn(
+                "w-full text-left rounded-xl px-3 py-2.5 text-sm transition-all",
+                activeSection === st
+                  ? "bg-zen-800 text-white font-semibold"
+                  : "text-gray-600 hover:bg-gray-100"
+              )}
+            >
+              <span className="mr-2">{m.icon}</span>
+              <span>{m.label}</span>
+              {filled > 0 && (
+                <span className={cn("ml-1 text-xs", activeSection === st ? "text-zen-200" : "text-gray-400")}>
+                  ({filled}/{total})
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Right: active section panel */}
+      <div className="flex-1 pl-6">
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-gray-900">
+            {SECTION_META[activeSection].icon} {SECTION_META[activeSection].label}
+          </h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Upload the report to auto-extract values, or enter manually. Expand any row to add clinical findings & recommendations.
+          </p>
+        </div>
+        <SectionPanel
+          key={activeSection}
+          reportId={reportId}
+          sectionType={activeSection}
+          initialData={allSections[activeSection] || null}
+          onSaved={loadAll}
+        />
+      </div>
+    </div>
+  );
+}

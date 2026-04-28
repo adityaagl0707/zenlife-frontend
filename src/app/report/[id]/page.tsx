@@ -206,6 +206,12 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
             {/* Quick action nav */}
             <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                onClick={() => { setPanelOrgan(null); setPanelFindings(findings); setPanelOpen(true); }}
+                className="flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-zen-900 hover:bg-zen-50 transition-colors"
+              >
+                <ChevronRight className="h-4 w-4" /> Open Detailed Report
+              </button>
               <Link
                 href={`/report/${reportId}/chat`}
                 className="flex items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-sm font-medium hover:bg-white/20 transition-colors"

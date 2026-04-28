@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ReportSectionsPanel from "@/components/admin/ReportSectionsPanel";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -668,7 +669,7 @@ export default function AdminPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [reportDetail, setReportDetail] = useState<Record<string, unknown> | null>(null);
-  const [reportStep, setReportStep] = useState<"report" | "organs" | "findings" | "labs" | "scans" | "priorities" | "done">("report");
+  const [reportStep, setReportStep] = useState<"report" | "organs" | "findings" | "labs" | "scans" | "report-data" | "priorities" | "done">("report");
 
   // New patient form
   const [patientForm, setPatientForm] = useState({ phone: "", name: "", age: "", gender: "Male" });
@@ -901,6 +902,7 @@ export default function AdminPage() {
                 { id: "findings", label: "Findings" },
                 { id: "labs", label: "🧪 Lab Results" },
                 { id: "scans", label: "🩻 Scans" },
+                { id: "report-data", label: "📋 Report Data" },
                 { id: "priorities", label: "Priorities" },
                 { id: "done", label: "✓ Done" },
               ] as const).map(({ id, label }) => (
@@ -959,6 +961,10 @@ export default function AdminPage() {
 
                 {reportStep === "scans" && (
                   <ScanFindingsSection reportId={selectedReportId} onImported={() => loadReportDetail(selectedReportId!)} />
+                )}
+
+                {reportStep === "report-data" && (
+                  <ReportSectionsPanel reportId={selectedReportId} />
                 )}
 
                 {reportStep === "priorities" && (
