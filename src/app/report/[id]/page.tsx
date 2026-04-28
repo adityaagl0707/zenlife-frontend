@@ -267,7 +267,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 All {totalFindings} findings <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <OrganGrid organs={organs} onSelect={openOrganPanel} />
+            <OrganGrid organs={organs} findings={findings} onSelect={openOrganPanel} />
           </section>
 
           {/* Severity breakdown */}

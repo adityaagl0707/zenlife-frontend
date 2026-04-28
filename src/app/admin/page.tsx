@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical } from "lucide-react";
+import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical, RefreshCw, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReportSectionsPanel from "@/components/admin/ReportSectionsPanel";
 
@@ -325,14 +325,30 @@ function LabResultsSection({ reportId, onImported }: { reportId: number; onImpor
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch(`${BASE}/admin/markers`)
-      .then(r => r.json())
-      .then(d => {
-        setMarkers(d.markers);
-        setRows(d.markers.map((m: LabMarker) => ({ ...m, value: "", severity: "normal" })));
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    Promise.all([
+      fetch(`${BASE}/admin/markers`).then(r => r.json()),
+      fetch(`${BASE}/admin/reports/${reportId}/sections/blood`).then(r => r.json()).catch(() => null),
+      fetch(`${BASE}/admin/reports/${reportId}/sections/urine`).then(r => r.json()).catch(() => null),
+    ]).then(([markersData, bloodSection, urineSection]) => {
+      setMarkers(markersData.markers);
+      const sectionParams: Record<string, string> = {};
+      for (const sec of [bloodSection, urineSection]) {
+        if (sec?.parameters) {
+          for (const [name, data] of Object.entries(sec.parameters)) {
+            const val = typeof data === "object" && data !== null ? (data as Record<string, string>).value : String(data);
+            if (val && val !== "Not Found") sectionParams[name.toLowerCase()] = val;
+          }
+        }
+      }
+      setRows(markersData.markers.map((m: LabMarker) => {
+        const preloaded = sectionParams[m.name.toLowerCase()];
+        if (preloaded) {
+          return { ...m, value: preloaded, severity: classifySeverityClient(preloaded, m.normal_range) };
+        }
+        return { ...m, value: "", severity: "normal" };
+      }));
+    }).finally(() => setLoading(false));
+  }, [reportId]);
 
   function updateValue(idx: number, value: string) {
     setRows(prev => {
@@ -523,6 +539,31 @@ function ScanFindingsSection({ reportId, onImported }: { reportId: number; onImp
   const [usgValues, setUsgValues] = useState<ScanValues>({});
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    const sectionMap: Record<string, (vals: ScanValues) => void> = {
+      dexa: setDexaValues,
+      calcium_score: setCalciumValues,
+      mri: setMriValues,
+      chest_xray: setXrayValues,
+      usg: setUsgValues,
+    };
+    for (const [sectionType, setter] of Object.entries(sectionMap)) {
+      fetch(`${BASE}/admin/reports/${reportId}/sections/${sectionType}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data?.parameters && Object.keys(data.parameters).length > 0) {
+            const vals: ScanValues = {};
+            for (const [name, d] of Object.entries(data.parameters)) {
+              const val = typeof d === "object" && d !== null ? (d as Record<string, string>).value : String(d);
+              if (val && val !== "Not Found") vals[name] = val;
+            }
+            setter(vals);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [reportId]);
+
   async function importNumericFindings(fields: typeof DEXA_FIELDS, values: ScanValues, testType: string) {
     const toImport = fields.filter(f => values[f.name]);
     for (const f of toImport) {
@@ -657,6 +698,141 @@ function ScanFindingsSection({ reportId, onImported }: { reportId: number; onImp
   );
 }
 
+// ── Organ Sync Section ────────────────────────────────────────────────────
+
+type OrganRow = { id: number; icon: string; organ_name: string; severity: string; risk_label: string; critical_count: number; major_count: number; minor_count: number; normal_count: number };
+
+function OrganSyncSection({ reportId, organs, onSynced }: { reportId: number; organs: OrganRow[]; onSynced: () => void }) {
+  const [syncing, setSyncing] = useState(false);
+  const [expanded, setExpanded] = useState<number | null>(null);
+
+  async function syncOrgans() {
+    setSyncing(true);
+    try {
+      await api(`/admin/reports/${reportId}/sync-organs`, "POST");
+      onSynced();
+    } catch (e: unknown) { alert(e instanceof Error ? e.message : "Sync failed"); }
+    finally { setSyncing(false); }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <SectionHeader title="Organ Scores" subtitle="Auto-computed from imported findings. Sync after importing from Report Data." />
+        <button onClick={syncOrgans} disabled={syncing}
+          className="flex items-center gap-1.5 rounded-full bg-zen-800 px-4 py-2 text-xs font-bold text-white hover:bg-zen-700 disabled:opacity-50 flex-shrink-0">
+          {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          {syncing ? "Syncing…" : "Sync Organ Scores"}
+        </button>
+      </div>
+
+      {organs.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center">
+          <p className="text-sm text-gray-500 mb-3">No organ scores yet. Import findings from Report Data, then click Sync.</p>
+          <button onClick={syncOrgans} disabled={syncing}
+            className="btn-primary py-2 text-sm flex items-center gap-2 mx-auto disabled:opacity-50">
+            {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Create All 10 Organ Scores
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {organs.map(o => {
+            const isOpen = expanded === o.id;
+            const total = o.critical_count + o.major_count + o.minor_count + o.normal_count;
+            return (
+              <div key={o.id} className={cn("rounded-xl border overflow-hidden", SEVERITY_COLOR[o.severity] || "border-gray-200")}>
+                <button className="w-full flex items-center justify-between px-4 py-3 text-sm text-left"
+                  onClick={() => setExpanded(isOpen ? null : o.id)}>
+                  <span className="font-semibold">{o.icon} {o.organ_name}</span>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-gray-500">{total} parameters mapped</span>
+                    <span className="capitalize font-semibold">{o.severity}</span>
+                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", isOpen && "rotate-90")} />
+                  </div>
+                </button>
+                {isOpen && (
+                  <div className="border-t border-current/10 px-4 pb-4 pt-3">
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { label: "Critical", count: o.critical_count, cls: "bg-red-100 text-red-700 border-red-200" },
+                        { label: "Major", count: o.major_count, cls: "bg-amber-100 text-amber-700 border-amber-200" },
+                        { label: "Minor", count: o.minor_count, cls: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+                        { label: "Normal", count: o.normal_count, cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+                      ].map(({ label, count, cls }) => (
+                        <div key={label} className={cn("rounded-lg border p-3 text-center", cls)}>
+                          <p className="text-2xl font-extrabold">{count}</p>
+                          <p className="text-[11px] font-semibold mt-0.5">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">{o.risk_label}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ── Priorities Section ────────────────────────────────────────────────────
+
+function PrioritiesSection({ reportId, priorities, onChanged }: { reportId: number; priorities: Array<{id: number; priority_order: number; title: string}>; onChanged: () => void }) {
+  const [generating, setGenerating] = useState(false);
+
+  async function generateAI() {
+    setGenerating(true);
+    try {
+      await api(`/admin/reports/${reportId}/generate-priorities`, "POST");
+      onChanged();
+    } catch (e: unknown) { alert(e instanceof Error ? e.message : "AI generation failed"); }
+    finally { setGenerating(false); }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <SectionHeader title="Health Priorities" subtitle="AI-generated personalised action items shown on the patient's report." />
+        <button onClick={generateAI} disabled={generating}
+          className="flex items-center gap-1.5 rounded-full bg-zen-800 px-4 py-2 text-xs font-bold text-white hover:bg-zen-700 disabled:opacity-50 flex-shrink-0">
+          {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          {generating ? "Generating…" : "Generate with AI"}
+        </button>
+      </div>
+
+      {priorities.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center">
+          <Sparkles className="mx-auto h-8 w-8 text-gray-300 mb-3" />
+          <p className="text-sm text-gray-500 mb-3">No priorities yet. Sync organ scores first, then generate with AI.</p>
+          <button onClick={generateAI} disabled={generating}
+            className="btn-primary py-2 text-sm flex items-center gap-2 mx-auto disabled:opacity-50">
+            {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            {generating ? "Generating…" : "Generate Priorities with AI"}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {priorities.map(p => (
+            <div key={p.id} className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-zen-800 text-xs font-bold text-white">{p.priority_order}</span>
+              <span className="font-medium text-gray-800">{p.title}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {priorities.length > 0 && (
+        <PriorityForm reportId={reportId} onAdded={onChanged} />
+      )}
+    </div>
+  );
+}
+
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
 type Patient = { id: number; name: string; phone: string; age: number; gender: string; orders: { id: number; booking_id: string; status: string; has_report: boolean; report_id: number | null }[] };
@@ -669,7 +845,7 @@ export default function AdminPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [reportDetail, setReportDetail] = useState<Record<string, unknown> | null>(null);
-  const [reportStep, setReportStep] = useState<"report" | "organs" | "findings" | "labs" | "scans" | "report-data" | "priorities" | "done">("report");
+  const [reportStep, setReportStep] = useState<"report" | "organs" | "labs" | "scans" | "report-data" | "priorities" | "done">("report");
 
   // New patient form
   const [patientForm, setPatientForm] = useState({ phone: "", name: "", age: "", gender: "Male" });
@@ -898,12 +1074,11 @@ export default function AdminPage() {
             {/* Step tabs */}
             <div className="flex gap-2 overflow-x-auto pb-1">
               {([
-                { id: "organs", label: "Organs" },
-                { id: "findings", label: "Findings" },
+                { id: "organs", label: "🫀 Organs" },
                 { id: "labs", label: "🧪 Lab Results" },
                 { id: "scans", label: "🩻 Scans" },
                 { id: "report-data", label: "📋 Report Data" },
-                { id: "priorities", label: "Priorities" },
+                { id: "priorities", label: "⭐ Priorities" },
                 { id: "done", label: "✓ Done" },
               ] as const).map(({ id, label }) => (
                 <button key={id} onClick={() => setReportStep(id)}
@@ -919,40 +1094,11 @@ export default function AdminPage() {
               <div className="space-y-4">
 
                 {reportStep === "organs" && (
-                  <>
-                    <SectionHeader title="Organ Scores" subtitle="Add one row per organ system. Set counts for each severity level." />
-                    {((reportDetail.organs as unknown[]) ?? []).length > 0 && (
-                      <div className="space-y-2">
-                        {((reportDetail.organs as Array<{id: number; icon: string; organ_name: string; severity: string; risk_label: string; critical_count: number; major_count: number; minor_count: number; normal_count: number}>) ?? []).map(o => (
-                          <div key={o.id} className={cn("flex items-center justify-between rounded-xl border px-4 py-3 text-sm", SEVERITY_COLOR[o.severity] || "")}>
-                            <span>{o.icon} <strong>{o.organ_name}</strong> — {o.risk_label}</span>
-                            <div className="flex items-center gap-3 text-xs">
-                              <span>{o.critical_count}c · {o.major_count}M · {o.minor_count}m · {o.normal_count}n</span>
-                              <button onClick={async () => { await api(`/admin/reports/${selectedReportId}/organs/${o.id}`, "DELETE"); loadReportDetail(selectedReportId!); }} className="text-gray-400 hover:text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <OrganForm reportId={selectedReportId} onAdded={() => loadReportDetail(selectedReportId!)} />
-                  </>
-                )}
-
-                {reportStep === "findings" && (
-                  <>
-                    <SectionHeader title="Individual Findings" subtitle="Add specific biomarkers, scan results, or test values." />
-                    {((reportDetail.findings as unknown[]) ?? []).length > 0 && (
-                      <div className="space-y-2">
-                        {((reportDetail.findings as Array<{id: number; severity: string; name: string; test_type: string; value: string; unit: string; normal_range: string}>) ?? []).map(f => (
-                          <div key={f.id} className={cn("flex items-center justify-between rounded-xl border px-4 py-3 text-sm", SEVERITY_COLOR[f.severity] || "")}>
-                            <span><strong>{f.name}</strong> · {f.test_type} · {f.value}{f.unit ? ` ${f.unit}` : ""}{f.normal_range ? ` (Normal: ${f.normal_range})` : ""}</span>
-                            <button onClick={async () => { await api(`/admin/reports/${selectedReportId}/findings/${f.id}`, "DELETE"); loadReportDetail(selectedReportId!); }} className="text-gray-400 hover:text-red-500 ml-3"><Trash2 className="h-3.5 w-3.5" /></button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <FindingForm reportId={selectedReportId} onAdded={() => loadReportDetail(selectedReportId!)} />
-                  </>
+                  <OrganSyncSection
+                    reportId={selectedReportId}
+                    organs={(reportDetail.organs as Array<{id: number; icon: string; organ_name: string; severity: string; risk_label: string; critical_count: number; major_count: number; minor_count: number; normal_count: number}>) ?? []}
+                    onSynced={() => loadReportDetail(selectedReportId!)}
+                  />
                 )}
 
                 {reportStep === "labs" && (
@@ -968,20 +1114,11 @@ export default function AdminPage() {
                 )}
 
                 {reportStep === "priorities" && (
-                  <>
-                    <SectionHeader title="Health Priorities" subtitle="Add personalised action items shown on the patient's report." />
-                    {((reportDetail.priorities as unknown[]) ?? []).length > 0 && (
-                      <div className="space-y-2">
-                        {((reportDetail.priorities as Array<{id: number; priority_order: number; title: string}>) ?? []).map(p => (
-                          <div key={p.id} className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zen-800 text-xs font-bold text-white">{p.priority_order}</span>
-                            <span className="font-medium text-gray-800">{p.title}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <PriorityForm reportId={selectedReportId} onAdded={() => loadReportDetail(selectedReportId!)} />
-                  </>
+                  <PrioritiesSection
+                    reportId={selectedReportId}
+                    priorities={(reportDetail.priorities as Array<{id: number; priority_order: number; title: string}>) ?? []}
+                    onChanged={() => loadReportDetail(selectedReportId!)}
+                  />
                 )}
 
                 {reportStep === "done" && (
