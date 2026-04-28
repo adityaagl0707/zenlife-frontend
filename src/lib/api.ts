@@ -1,0 +1,132 @@
+const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+function getToken() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("zenlife_token");
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Request failed" }));
+    throw new Error(err.detail || "Request failed");
+  }
+  return res.json();
+}
+
+export const api = {
+  auth: {
+    sendOtp: (phone: string) => request("/auth/send-otp", { method: "POST", body: JSON.stringify({ phone }) }),
+    verifyOtp: (phone: string, otp: string) =>
+      request<{ access_token: string; user: { id: number; phone: string; name: string } }>(
+        "/auth/verify-otp",
+        { method: "POST", body: JSON.stringify({ phone, otp }) }
+      ),
+  },
+  orders: {
+    list: () => request<Order[]>("/orders/"),
+  },
+  reports: {
+    get: (id: number) => request<Report>(`/reports/${id}`),
+    organScores: (id: number) => request<OrganScore[]>(`/reports/${id}/organ-scores`),
+    findings: (id: number, params?: { severity?: string; test_type?: string }) => {
+      const q = new URLSearchParams(params as Record<string, string>).toString();
+      return request<Finding[]>(`/reports/${id}/findings${q ? `?${q}` : ""}`);
+    },
+    priorities: (id: number) => request<HealthPriority[]>(`/reports/${id}/priorities`),
+    notes: (id: number) => request<ConsultationNote[]>(`/reports/${id}/notes`),
+  },
+  chat: {
+    history: (reportId: number) => request<ChatMessage[]>(`/chat/${reportId}/history`),
+    send: (reportId: number, message: string) =>
+      request<ChatMessage>(`/chat/${reportId}/message`, { method: "POST", body: JSON.stringify({ message }) }),
+  },
+};
+
+// Types
+export interface Order {
+  id: number;
+  booking_id: string;
+  patient_name: string;
+  patient_age: number;
+  patient_gender: string;
+  scan_type: string;
+  status: "pending" | "scheduled" | "completed";
+  scan_date: string | null;
+  amount: number;
+  has_report: boolean;
+  report_id: number | null;
+}
+
+export interface Report {
+  id: number;
+  patient_name: string;
+  patient_age: number;
+  patient_gender: string;
+  booking_id: string;
+  coverage_index: number;
+  overall_severity: string;
+  report_date: string;
+  next_visit: string;
+  summary: string;
+  finding_counts: { critical: number; major: number; minor: number; normal: number };
+}
+
+export interface OrganScore {
+  id: number;
+  organ_name: string;
+  severity: string;
+  risk_label: string;
+  critical_count: number;
+  major_count: number;
+  minor_count: number;
+  normal_count: number;
+  icon: string;
+}
+
+export interface Finding {
+  id: number;
+  test_type: string;
+  name: string;
+  severity: string;
+  value: string | null;
+  normal_range: string | null;
+  unit: string | null;
+  description: string | null;
+  clinical_findings: string | null;
+  recommendations: string | null;
+  extra_data: Record<string, unknown> | null;
+}
+
+export interface HealthPriority {
+  id: number;
+  priority_order: number;
+  title: string;
+  why_important: string;
+  diet_recommendations: string[];
+  exercise_recommendations: string[];
+  sleep_recommendations: string[];
+  supplement_recommendations: string[];
+}
+
+export interface ConsultationNote {
+  id: number;
+  note_type: string;
+  content: string;
+  author: string;
+  created_at: string;
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
