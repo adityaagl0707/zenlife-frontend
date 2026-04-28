@@ -15,6 +15,10 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
 
 export type SeverityCounts = { critical: number; major: number; minor: number; normal: number };
 
+export function organTotalParams(organName: string): number {
+  return new Set(ORGAN_PARAM_MAP[organName] ?? []).size;
+}
+
 export function computeOrganCounts(organName: string, findings: Finding[]): SeverityCounts {
   const params = ORGAN_PARAM_MAP[organName];
   if (!params || !findings.length) return { critical: 0, major: 0, minor: 0, normal: 0 };

@@ -1,7 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import { OrganScore, Finding } from "@/lib/api";
-import { computeOrganCounts } from "@/lib/organParamMap";
+import { computeOrganCounts, organTotalParams } from "@/lib/organParamMap";
 
 const SEVERITY_RING: Record<string, string> = {
   critical: "ring-red-500 bg-red-50",
@@ -38,10 +38,11 @@ export default function OrganGrid({
       {organs.map((organ) => {
         const s = organ.severity?.toLowerCase() ?? "normal";
         const computed = computeOrganCounts(organ.organ_name, findings);
-        const total = computed.critical + computed.major + computed.minor + computed.normal;
+        const importedTotal = computed.critical + computed.major + computed.minor + computed.normal;
+        const totalParams = organTotalParams(organ.organ_name);
 
         // Use computed counts if findings were imported; fall back to DB counts
-        const counts = total > 0 ? computed : {
+        const counts = importedTotal > 0 ? computed : {
           critical: organ.critical_count ?? 0,
           major: organ.major_count ?? 0,
           minor: organ.minor_count ?? 0,
@@ -69,6 +70,13 @@ export default function OrganGrid({
               </div>
             </div>
 
+            {/* Total parameter count */}
+            {totalParams > 0 && (
+              <p className="text-[10px] text-gray-400 font-medium -mt-1">
+                {totalParams} parameters tracked
+              </p>
+            )}
+
             {countTotal > 0 ? (
               <div className="grid grid-cols-2 gap-1 w-full">
                 {(["critical", "major", "minor", "normal"] as const).map((sev) => (
@@ -85,7 +93,7 @@ export default function OrganGrid({
                 ))}
               </div>
             ) : (
-              <p className="text-[11px] text-gray-400">No parameters mapped yet</p>
+              <p className="text-[11px] text-gray-400">No parameters imported yet</p>
             )}
           </button>
         );
