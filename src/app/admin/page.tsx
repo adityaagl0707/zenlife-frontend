@@ -191,14 +191,15 @@ function PriorityForm({ reportId, onAdded }: { reportId: number; onAdded: () => 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
+  function getList(key: string): string[] { return ((form as unknown as Record<string, string[]>)[key]) ?? []; }
   function updateList(key: string, idx: number, val: string) {
-    const arr = [...(form as Record<string, unknown[]>)[key] as string[]];
+    const arr = [...getList(key)];
     arr[idx] = val;
     setForm({...form, [key]: arr});
   }
-  function addItem(key: string) { setForm({...form, [key]: [...(form as Record<string, unknown[]>)[key] as string[], ""]}); }
+  function addItem(key: string) { setForm({...form, [key]: [...getList(key), ""]}); }
   function removeItem(key: string, idx: number) {
-    const arr = [...(form as Record<string, unknown[]>)[key] as string[]];
+    const arr = [...getList(key)];
     arr.splice(idx, 1);
     setForm({...form, [key]: arr.length ? arr : [""]});
   }
@@ -222,7 +223,7 @@ function PriorityForm({ reportId, onAdded }: { reportId: number; onAdded: () => 
   }
 
   const listField = (label: string, key: string) => {
-    const arr = (form as Record<string, string[]>)[key];
+    const arr = getList(key);
     return (
       <Field label={label}>
         <div className="space-y-1.5">
