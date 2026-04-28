@@ -37,18 +37,8 @@ export default function OrganGrid({
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {organs.map((organ) => {
         const s = organ.severity?.toLowerCase() ?? "normal";
-        const computed = computeOrganCounts(organ.organ_name, findings);
-        const importedTotal = computed.critical + computed.major + computed.minor + computed.normal;
+        const counts = computeOrganCounts(organ.organ_name, findings);
         const totalParams = organTotalParams(organ.organ_name);
-
-        // Use computed counts if findings were imported; fall back to DB counts
-        const counts = importedTotal > 0 ? computed : {
-          critical: organ.critical_count ?? 0,
-          major: organ.major_count ?? 0,
-          minor: organ.minor_count ?? 0,
-          normal: organ.normal_count ?? 0,
-        };
-
         const countTotal = counts.critical + counts.major + counts.minor + counts.normal;
 
         return (
