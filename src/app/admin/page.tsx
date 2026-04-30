@@ -732,7 +732,7 @@ function OrganSyncSection({ reportId, organs, onSynced }: { reportId: number; or
           <button onClick={syncOrgans} disabled={syncing}
             className="btn-primary py-2 text-sm flex items-center gap-2 mx-auto disabled:opacity-50">
             {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Create All 10 Organ Scores
+            Create All 13 Organ Scores
           </button>
         </div>
       ) : (
@@ -833,9 +833,175 @@ function PrioritiesSection({ reportId, priorities, onChanged }: { reportId: numb
 }
 
 
+// ── Body Age Section ───────────────────────────────────────────────────────
+
+function BodyAgeSection({ reportId }: { reportId: number }) {
+  const [loading, setLoading] = useState(false);
+  interface BodyAgeResult {
+    ok: boolean;
+    zen_age: number | null;
+    pheno_age: number | null;
+    chronological_age: number | null;
+    age_difference: number | null;
+    confidence: string;
+    interpretation: string;
+    markers_used: string[];
+    markers_missing: string[];
+    sub_ages: Record<string, number | null>;
+  }
+  const [result, setResult] = useState<BodyAgeResult | null>(null);
+  const [error, setError] = useState("");
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com/api/v1";
+
+  async function calculate() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/admin/reports/${reportId}/calculate-body-age`, { method: "POST" });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.detail || "Failed"); }
+      const data = await res.json() as BodyAgeResult;
+      setResult(data);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); }
+    finally { setLoading(false); }
+  }
+
+  const SUB_LABELS: Record<string, string> = {
+    metabolic_age: "Metabolic", cardiovascular_age: "Vascular",
+    bone_age: "Bone & Muscle", inflammatory_age: "Inflammation", renal_age: "Kidney",
+  };
+
+  const diffColor = (diff: number) => diff <= -2 ? "text-emerald-600" : diff > 3 ? "text-red-600" : diff > 0 ? "text-amber-600" : "text-emerald-500";
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <SectionHeader title="ZenAge — Biological Age" subtitle="Uses PhenoAge formula (9 blood biomarkers) + Claude AI synthesis across all scan data." />
+        <button onClick={calculate} disabled={loading}
+          className="flex items-center gap-1.5 rounded-full bg-violet-700 px-4 py-2 text-xs font-bold text-white hover:bg-violet-600 disabled:opacity-50 flex-shrink-0">
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <span>🧬</span>}
+          {loading ? "Calculating…" : "Calculate Body Age"}
+        </button>
+      </div>
+
+      {error && <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</p>}
+
+      {!result && !loading && (
+        <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center">
+          <p className="text-4xl mb-3">🧬</p>
+          <p className="text-sm font-semibold text-gray-600 mb-1">No body age calculated yet</p>
+          <p className="text-xs text-gray-400">Ensure blood lab findings are imported, then click Calculate Body Age.</p>
+        </div>
+      )}
+
+      {result && (
+        <div className="space-y-4">
+          {/* Main age card */}
+          <div className="rounded-2xl bg-violet-50 border border-violet-100 p-5">
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-violet-500 mb-1">ZenAge</p>
+                <p className={`text-6xl font-black leading-none ${diffColor((result.age_difference as number) ?? 0)}`}>
+                  {result.zen_age != null ? Math.round(result.zen_age as number) : "—"}
+                </p>
+                <p className="text-xs text-violet-400 mt-1">years</p>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-500">Chronological age: <span className="font-bold text-gray-800">{result.chronological_age != null ? Math.round(result.chronological_age as number) : "—"} yrs</span></p>
+                {result.pheno_age != null && (
+                  <p className="text-sm text-gray-500">PhenoAge (formula): <span className="font-semibold text-gray-700">{(result.pheno_age as number).toFixed(1)} yrs</span></p>
+                )}
+                <p className={`mt-1 text-sm font-bold ${diffColor((result.age_difference as number) ?? 0)}`}>
+                  {(result.age_difference as number) < 0
+                    ? `${Math.abs(result.age_difference as number).toFixed(1)} years younger`
+                    : (result.age_difference as number) > 0
+                    ? `${(result.age_difference as number).toFixed(1)} years older`
+                    : "At par with chronological age"}
+                </p>
+                <p className="mt-1 text-xs text-gray-400">Confidence: <span className="font-semibold capitalize">{result.confidence as string}</span></p>
+              </div>
+            </div>
+            {result.interpretation && (
+              <p className="mt-4 text-sm text-gray-600 bg-white rounded-xl px-4 py-3 leading-relaxed">{result.interpretation as string}</p>
+            )}
+          </div>
+
+          {/* Sub-ages */}
+          {result.sub_ages && Object.keys(result.sub_ages as object).length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Domain Sub-Ages</p>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {Object.entries(result.sub_ages as Record<string, number>)
+                  .filter(([, v]) => v != null)
+                  .map(([key, val]) => {
+                    const diff = val - ((result.chronological_age as number) ?? 0);
+                    return (
+                      <div key={key} className="rounded-xl bg-white border border-gray-100 p-3 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                          {SUB_LABELS[key] ?? key.replace(/_age$/, "").replace(/_/g, " ")}
+                        </p>
+                        <p className={`text-3xl font-black leading-none ${diffColor(diff)}`}>{Math.round(val)}</p>
+                        <p className="text-[9px] text-gray-400 mt-1">
+                          {diff < -0.5 ? `↓ ${Math.abs(diff).toFixed(1)} younger` : diff > 0.5 ? `↑ ${diff.toFixed(1)} older` : "At par"}
+                        </p>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* Markers */}
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3">
+              <p className="font-bold text-emerald-700 mb-1">Markers Used ({(result.markers_used as string[]).length})</p>
+              <p className="text-gray-500 leading-relaxed">{(result.markers_used as string[]).map(m => m.replace(/_/g, " ")).join(", ") || "—"}</p>
+            </div>
+            {(result.markers_missing as string[]).length > 0 && (
+              <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
+                <p className="font-bold text-amber-700 mb-1">Missing ({(result.markers_missing as string[]).length})</p>
+                <p className="text-gray-400 leading-relaxed">{(result.markers_missing as string[]).map(m => m.replace(/_/g, " ")).join(", ")}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
 type Patient = { id: number; name: string; phone: string; age: number; gender: string; orders: { id: number; booking_id: string; status: string; has_report: boolean; report_id: number | null }[] };
+
+function SyncAllOrgansButton() {
+  const [syncing, setSyncing] = useState(false);
+
+  async function syncAll() {
+    if (!confirm("This will sync organ systems across ALL reports. Continue?")) return;
+    setSyncing(true);
+    try {
+      const res = await api("/admin/sync-all-organs", "POST");
+      alert(`✅ Synced ${res.organ_systems} organ systems across ${res.reports_synced} report(s).`);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={syncAll}
+      disabled={syncing}
+      className="flex items-center gap-1.5 rounded-full border border-zen-700 px-4 py-2 text-xs font-bold text-zen-800 hover:bg-zen-50 disabled:opacity-50 transition-colors"
+    >
+      {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+      {syncing ? "Syncing…" : "Sync All Organ Systems"}
+    </button>
+  );
+}
 
 export default function AdminPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -845,7 +1011,7 @@ export default function AdminPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [reportDetail, setReportDetail] = useState<Record<string, unknown> | null>(null);
-  const [reportStep, setReportStep] = useState<"report" | "organs" | "labs" | "scans" | "report-data" | "priorities" | "done">("report");
+  const [reportStep, setReportStep] = useState<"report" | "organs" | "labs" | "scans" | "report-data" | "priorities" | "body-age" | "done">("report");
 
   // New patient form
   const [patientForm, setPatientForm] = useState({ phone: "", name: "", age: "", gender: "Male" });
@@ -916,9 +1082,12 @@ export default function AdminPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-extrabold text-gray-900">Patients</h2>
-              <button onClick={() => { setView("new-patient"); genBookingId(); }} className="btn-primary py-2 text-sm flex items-center gap-2">
-                <Plus className="h-4 w-4" /> Add Patient
-              </button>
+              <div className="flex items-center gap-2">
+                <SyncAllOrgansButton />
+                <button onClick={() => { setView("new-patient"); genBookingId(); }} className="btn-primary py-2 text-sm flex items-center gap-2">
+                  <Plus className="h-4 w-4" /> Add Patient
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -1079,6 +1248,7 @@ export default function AdminPage() {
                 { id: "scans", label: "🩻 Scans" },
                 { id: "report-data", label: "📋 Report Data" },
                 { id: "priorities", label: "⭐ Priorities" },
+                { id: "body-age", label: "🧬 Body Age" },
                 { id: "done", label: "✓ Done" },
               ] as const).map(({ id, label }) => (
                 <button key={id} onClick={() => setReportStep(id)}
@@ -1119,6 +1289,10 @@ export default function AdminPage() {
                     priorities={(reportDetail.priorities as Array<{id: number; priority_order: number; title: string}>) ?? []}
                     onChanged={() => loadReportDetail(selectedReportId!)}
                   />
+                )}
+
+                {reportStep === "body-age" && (
+                  <BodyAgeSection reportId={selectedReportId} />
                 )}
 
                 {reportStep === "done" && (
