@@ -43,6 +43,7 @@ export const api = {
     },
     priorities: (id: number) => request<HealthPriority[]>(`/reports/${id}/priorities`),
     notes: (id: number) => request<ConsultationNote[]>(`/reports/${id}/notes`),
+    bodyAge: (id: number) => request<BodyAge | null>(`/reports/${id}/body-age`),
   },
   chat: {
     history: (reportId: number) => request<ChatMessage[]>(`/chat/${reportId}/history`),
@@ -129,4 +130,22 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   created_at: string;
+}
+
+export interface BodyAge {
+  chronological_age: number | null;
+  pheno_age: number | null;
+  zen_age: number | null;
+  age_difference: number | null;
+  confidence: "high" | "medium" | "low";
+  interpretation: string;
+  markers_used: string[];
+  markers_missing: string[];
+  sub_ages: {
+    metabolic_age?: number | null;
+    cardiovascular_age?: number | null;
+    bone_age?: number | null;
+    inflammatory_age?: number | null;
+    renal_age?: number | null;
+  };
 }

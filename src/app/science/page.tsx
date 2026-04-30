@@ -56,24 +56,24 @@ export default function SciencePage() {
       <Navbar />
       <main>
         {/* Hero */}
-        <section className="bg-zen-900 pt-32 pb-20 text-white">
+        <div className="pt-32 pb-10 bg-cream">
           <div className="mx-auto max-w-4xl px-6 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-zen-300">Evidence-Based Medicine</p>
-            <h1 className="mt-4 text-5xl font-extrabold leading-tight md:text-6xl">
-              The Science Behind<br />
-              <span className="text-zen-300">ZenScan</span>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">Evidence-Based Medicine</p>
+            <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] leading-tight text-zen-900">
+              The science behind ZenScan.
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zen-200/80">
+            <p className="mx-auto mt-5 max-w-2xl text-[15px] text-gray-500 leading-relaxed">
               ZenLife's ZenCore Protocol is built on decades of peer-reviewed research in preventive medicine, oncology, cardiology, and metabolomics.
             </p>
           </div>
-        </section>
+        </div>
 
         {/* Modalities */}
         <section className="bg-cream py-20">
           <div className="mx-auto max-w-7xl px-6">
             <div className="mb-12 text-center">
-              <h2 className="text-4xl font-extrabold text-gray-900">What ZenScan Measures</h2>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">The Modalities</p>
+              <h2 className="font-display text-[2rem] text-zen-900">What ZenScan measures.</h2>
               <p className="mt-4 text-gray-500 max-w-2xl mx-auto">Six complementary modalities that together screen for 300+ conditions across every major organ system.</p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -81,8 +81,8 @@ export default function SciencePage() {
                 const Icon = p.icon;
                 return (
                   <div key={p.title} className="card hover:shadow-md transition-shadow">
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-zen-50">
-                      <Icon className="h-6 w-6 text-zen-800" />
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-cream-dark">
+                      <Icon className="h-6 w-6 text-zen-900" />
                     </div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-zen-600">{p.subtitle}</p>
                     <h3 className="mt-1 text-xl font-bold text-gray-900">{p.title}</h3>
@@ -98,17 +98,18 @@ export default function SciencePage() {
         <section className="bg-white py-20">
           <div className="mx-auto max-w-4xl px-6">
             <div className="mb-12 text-center">
-              <h2 className="text-4xl font-extrabold text-gray-900">The ZenCore Protocol</h2>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">The Protocol</p>
+              <h2 className="font-display text-[2rem] text-zen-900">Your health journey.</h2>
               <p className="mt-4 text-gray-500">Your end-to-end health intelligence journey — from booking to action plan.</p>
             </div>
             <div className="relative space-y-0">
               {PROTOCOL_STEPS.map((s, i) => (
                 <div key={s.step} className="flex gap-6 pb-8 last:pb-0">
                   <div className="flex flex-col items-center">
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-zen-800 text-sm font-bold text-white">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-zen-900 text-sm font-bold text-white">
                       {s.step}
                     </div>
-                    {i < PROTOCOL_STEPS.length - 1 && <div className="mt-1 h-full w-0.5 bg-zen-100 flex-1" />}
+                    {i < PROTOCOL_STEPS.length - 1 && <div className="mt-1 h-full w-0.5 bg-black/8 flex-1" />}
                   </div>
                   <div className="pb-1 pt-1.5">
                     <h3 className="font-bold text-gray-900">{s.title}</h3>
@@ -123,9 +124,9 @@ export default function SciencePage() {
         {/* CTA */}
         <section className="bg-zen-900 py-20 text-white text-center">
           <div className="mx-auto max-w-xl px-6">
-            <h2 className="text-3xl font-extrabold">Ready to know your body inside out?</h2>
+            <h2 className="font-display text-[2rem] text-white">Ready to know your body inside out?</h2>
             <p className="mt-4 text-zen-200">Join thousands of Indians who've taken charge of their health with ZenScan.</p>
-            <Link href="/book" className="mt-8 inline-block rounded-full bg-white px-10 py-4 font-bold text-zen-900 hover:bg-zen-50 transition-colors">
+            <Link href="/book" className="mt-8 inline-block rounded-full bg-white px-8 py-3.5 text-[14px] font-bold text-zen-900">
               Book ZenScan
             </Link>
           </div>

@@ -50,32 +50,38 @@ export default function ScanPage() {
       <Navbar />
       <main>
         {/* Hero */}
-        <section className="bg-zen-900 pt-32 pb-20 text-white">
+        <div className="pt-32 pb-10 bg-cream">
           <div className="mx-auto max-w-4xl px-6 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-zen-300">Everything Included</p>
-            <h1 className="mt-4 text-5xl font-extrabold leading-tight md:text-6xl">
-              The ZenScan<br />
-              <span className="text-zen-300">Experience</span>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">ZenScan</p>
+            <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] leading-tight text-zen-900">
+              The ZenScan experience.
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-zen-200/80">
+            <p className="mx-auto mt-5 max-w-2xl text-[15px] text-gray-500 leading-relaxed">
               One appointment. Every major health risk screened. A complete picture of your body — in 72 hours.
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-zen-200">
-              <span className="flex items-center gap-2"><Clock className="h-4 w-4" /> 3–4 hours</span>
-              <span className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Bengaluru (more cities soon)</span>
-              <span className="flex items-center gap-2"><Star className="h-4 w-4" /> 4.9 / 5 avg. rating</span>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-cream-dark px-4 py-2 text-[12px] font-semibold text-zen-900">
+                <Clock className="h-3.5 w-3.5" /> 3–4 hours
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-cream-dark px-4 py-2 text-[12px] font-semibold text-zen-900">
+                <MapPin className="h-3.5 w-3.5" /> Bengaluru (more cities soon)
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-cream-dark px-4 py-2 text-[12px] font-semibold text-zen-900">
+                <Star className="h-3.5 w-3.5" /> 4.9 / 5 avg. rating
+              </span>
             </div>
           </div>
-        </section>
+        </div>
 
         {/* What's included */}
         <section className="bg-cream py-20">
           <div className="mx-auto max-w-4xl px-6">
             <div className="mb-12 text-center">
-              <h2 className="text-4xl font-extrabold text-gray-900">What's Included at ₹27,500</h2>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Package</p>
+              <h2 className="font-display text-[2rem] text-zen-900">Everything at ₹27,500.</h2>
               <p className="mt-4 text-gray-500">No hidden fees. No surprise add-ons. One comprehensive package.</p>
             </div>
-            <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-black/5">
+            <div className="rounded-3xl bg-white p-8 ring-1 ring-black/5">
               <div className="grid gap-3 sm:grid-cols-2">
                 {INCLUSIONS.map((item) => (
                   <div key={item} className="flex items-start gap-3">
@@ -85,10 +91,10 @@ export default function ScanPage() {
                 ))}
               </div>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <Link href="/book" className="btn-primary flex-1 py-4 text-center text-base font-bold">
+                <Link href="/book" className="flex-1 rounded-full bg-zen-900 py-4 text-center text-[14px] font-bold text-white">
                   Book ZenScan — ₹27,500
                 </Link>
-                <Link href="/science" className="flex-1 rounded-full border-2 border-zen-800 py-4 text-center text-base font-bold text-zen-800 hover:bg-zen-50 transition-colors">
+                <Link href="/science" className="flex-1 rounded-full border border-zen-900/20 py-4 text-center text-[14px] font-semibold text-zen-900 hover:bg-zen-50 transition-colors">
                   See the Science
                 </Link>
               </div>
@@ -99,11 +105,14 @@ export default function ScanPage() {
         {/* FAQs */}
         <section className="bg-white py-20">
           <div className="mx-auto max-w-3xl px-6">
-            <h2 className="mb-10 text-center text-4xl font-extrabold text-gray-900">Common Questions</h2>
+            <div className="mb-10 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Questions</p>
+              <h2 className="font-display text-[2rem] text-zen-900">Common questions.</h2>
+            </div>
             <div className="space-y-3">
               {FAQS.map((faq) => (
-                <details key={faq.q} className="group rounded-2xl border border-gray-100 bg-gray-50 px-6 py-5">
-                  <summary className="cursor-pointer list-none flex items-center justify-between font-semibold text-gray-800">
+                <details key={faq.q} className="group bg-white ring-1 ring-black/5 rounded-2xl px-6 py-5 border-0">
+                  <summary className="cursor-pointer list-none flex items-center justify-between font-semibold text-zen-900">
                     {faq.q}
                     <span className="ml-4 text-zen-600 group-open:rotate-45 transition-transform text-xl font-light">+</span>
                   </summary>
@@ -117,9 +126,9 @@ export default function ScanPage() {
         {/* CTA */}
         <section className="bg-zen-900 py-20 text-white text-center">
           <div className="mx-auto max-w-xl px-6">
-            <h2 className="text-3xl font-extrabold">Your health can't wait.</h2>
+            <h2 className="font-display text-[2rem] text-white">Your health can't wait.</h2>
             <p className="mt-4 text-zen-200">Most critical conditions are silent until they're not. ZenScan finds them early.</p>
-            <Link href="/book" className="mt-8 inline-block rounded-full bg-white px-10 py-4 font-bold text-zen-900 hover:bg-zen-50 transition-colors">
+            <Link href="/book" className="mt-8 inline-block rounded-full bg-white px-8 py-3.5 text-[14px] font-bold text-zen-900">
               Book Now
             </Link>
           </div>

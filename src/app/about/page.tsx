@@ -23,25 +23,25 @@ export default function AboutPage() {
       <Navbar />
       <main>
         {/* Hero */}
-        <section className="bg-zen-900 pt-32 pb-20 text-white">
+        <div className="pt-32 pb-10 bg-cream">
           <div className="mx-auto max-w-4xl px-6 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-zen-300">Our Mission</p>
-            <h1 className="mt-4 text-5xl font-extrabold leading-tight">
-              We started ZenLife because<br />
-              <span className="text-zen-300">someone we loved got sick too late.</span>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">Our Mission</p>
+            <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] leading-tight text-zen-900">
+              We started ZenLife because someone we loved got sick too late.
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-zen-200/80">
+            <p className="mx-auto mt-5 max-w-2xl text-[15px] text-gray-500 leading-relaxed">
               Arjun's father died of a heart attack at 58. The calcification had been building for a decade — invisible, symptomless, treatable. We built ZenLife so that no family has to go through what ours did.
             </p>
           </div>
-        </section>
+        </div>
 
         {/* Mission */}
         <section className="bg-cream py-20">
           <div className="mx-auto max-w-4xl px-6">
             <div className="grid gap-12 lg:grid-cols-2 items-center">
               <div>
-                <h2 className="text-4xl font-extrabold text-gray-900">India's preventive health problem</h2>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">The Problem</p>
+                <h2 className="font-display text-[2rem] text-zen-900">India's preventive health crisis.</h2>
                 <div className="mt-6 space-y-4 text-gray-600 leading-relaxed">
                   <p>India has one of the highest rates of premature death from non-communicable diseases in the world. 28% of deaths occur before age 70 — most from conditions that are detectable and preventable.</p>
                   <p>Yet the Indian healthcare system is almost entirely reactive. We build hospitals for sick people, not intelligence platforms for healthy ones.</p>
@@ -55,8 +55,8 @@ export default function AboutPage() {
                   { value: "300+", label: "conditions ZenScan screens for" },
                   { value: "₹27,500", label: "all-inclusive — no surprises" },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-                    <p className="text-3xl font-extrabold text-zen-800">{s.value}</p>
+                  <div key={s.label} className="rounded-2xl bg-white ring-1 ring-black/5 p-5">
+                    <p className="text-3xl font-extrabold text-zen-900">{s.value}</p>
                     <p className="mt-1 text-xs text-gray-500">{s.label}</p>
                   </div>
                 ))}
@@ -68,14 +68,17 @@ export default function AboutPage() {
         {/* Values */}
         <section className="bg-white py-20">
           <div className="mx-auto max-w-7xl px-6">
-            <h2 className="mb-12 text-center text-4xl font-extrabold text-gray-900">What We Stand For</h2>
+            <div className="mb-12 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Our Values</p>
+              <h2 className="font-display text-[2rem] text-zen-900">What we stand for.</h2>
+            </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {VALUES.map((v) => {
                 const Icon = v.icon;
                 return (
                   <div key={v.title} className="card">
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-zen-50">
-                      <Icon className="h-6 w-6 text-zen-800" />
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-cream-dark">
+                      <Icon className="h-6 w-6 text-zen-900" />
                     </div>
                     <h3 className="font-bold text-gray-900">{v.title}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-gray-500">{v.desc}</p>
@@ -89,11 +92,14 @@ export default function AboutPage() {
         {/* Team */}
         <section className="bg-cream py-20">
           <div className="mx-auto max-w-5xl px-6">
-            <h2 className="mb-12 text-center text-4xl font-extrabold text-gray-900">The Team</h2>
+            <div className="mb-12 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">The People</p>
+              <h2 className="font-display text-[2rem] text-zen-900">The team.</h2>
+            </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {TEAM.map((member) => (
                 <div key={member.name} className="card text-center">
-                  <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-white text-xl font-bold ${member.bg}`}>
+                  <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full text-white text-xl font-bold ${member.bg}`}>
                     {member.initials}
                   </div>
                   <h3 className="font-bold text-gray-900">{member.name}</h3>
@@ -108,13 +114,13 @@ export default function AboutPage() {
         {/* CTA */}
         <section className="bg-zen-900 py-20 text-white text-center">
           <div className="mx-auto max-w-xl px-6">
-            <h2 className="text-3xl font-extrabold">Join us on our mission.</h2>
+            <h2 className="font-display text-[2rem] text-white">Join us on our mission.</h2>
             <p className="mt-4 text-zen-200">We're hiring across clinical operations, engineering, and growth. Come build India's preventive health company.</p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/book" className="rounded-full bg-white px-8 py-3 font-bold text-zen-900 hover:bg-zen-50 transition-colors">
+              <Link href="/book" className="rounded-full bg-white px-8 py-3.5 text-[14px] font-bold text-zen-900">
                 Book ZenScan
               </Link>
-              <a href="mailto:careers@zenlife.health" className="rounded-full border border-white/30 px-8 py-3 font-medium text-white hover:bg-white/10 transition-colors">
+              <a href="mailto:careers@zenlife.health" className="rounded-full border border-white/30 px-8 py-3.5 text-[14px] font-semibold text-white hover:bg-white/10 transition-colors">
                 View Careers
               </a>
             </div>

@@ -1,79 +1,212 @@
 "use client";
-import { X } from "lucide-react";
+import { X, FlaskConical, Stethoscope, Lightbulb } from "lucide-react";
 import { useState } from "react";
 import { Finding, OrganScore } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-const SEVERITY_COLORS: Record<string, string> = {
-  critical: "bg-red-100 text-red-700",
-  major: "bg-orange-100 text-orange-700",
-  minor: "bg-yellow-100 text-yellow-700",
-  normal: "bg-emerald-100 text-emerald-700",
+// ── Severity tokens ────────────────────────────────────────────────────────
+
+const SEV = {
+  critical: {
+    border: "border-l-red-500",
+    badge: "bg-red-100 text-red-700",
+    dot: "bg-red-500",
+    value: "bg-red-50 text-red-700",
+    tab: "bg-red-500 text-white",
+    tabOff: "text-red-600 hover:bg-red-50",
+    label: "Critical",
+  },
+  major: {
+    border: "border-l-amber-400",
+    badge: "bg-amber-100 text-amber-700",
+    dot: "bg-amber-400",
+    value: "bg-amber-50 text-amber-700",
+    tab: "bg-amber-400 text-white",
+    tabOff: "text-amber-600 hover:bg-amber-50",
+    label: "Major",
+  },
+  minor: {
+    border: "border-l-yellow-400",
+    badge: "bg-yellow-100 text-yellow-700",
+    dot: "bg-yellow-400",
+    value: "bg-yellow-50 text-yellow-700",
+    tab: "bg-yellow-400 text-white",
+    tabOff: "text-yellow-600 hover:bg-yellow-50",
+    label: "Minor",
+  },
+  normal: {
+    border: "border-l-emerald-400",
+    badge: "bg-emerald-100 text-emerald-700",
+    dot: "bg-emerald-400",
+    value: "bg-emerald-50 text-emerald-700",
+    tab: "bg-emerald-500 text-white",
+    tabOff: "text-emerald-600 hover:bg-emerald-50",
+    label: "Normal",
+  },
 };
 
-function SevBadge({ severity }: { severity?: string }) {
-  const s = severity?.toLowerCase() ?? "normal";
+function getSev(s?: string) {
+  const key = (s?.toLowerCase() ?? "normal") as keyof typeof SEV;
+  return SEV[key] ?? SEV.normal;
+}
+
+// ── Value gauge ────────────────────────────────────────────────────────────
+
+function parseGaugePosition(value: string | null, range: string | null): number | null {
+  if (!value || !range) return null;
+  const v = parseFloat(value.replace(/[^\d.-]/g, ""));
+  if (isNaN(v)) return null;
+
+  const upper = range.trim().match(/^[<≤]=?\s*([\d.]+)/);
+  if (upper) {
+    const u = parseFloat(upper[1]);
+    return Math.min((v / (u * 1.6)) * 100, 100);
+  }
+  const lower = range.trim().match(/^[>≥]=?\s*([\d.]+)/);
+  if (lower) {
+    const l = parseFloat(lower[1]);
+    if (v >= l) return 30 + Math.random() * 20; // in range
+    return Math.max(10, (v / l) * 40);
+  }
+  const rng = range.trim().match(/^([\d.]+)\s*[-–]\s*([\d.]+)/);
+  if (rng) {
+    const lo = parseFloat(rng[1]), hi = parseFloat(rng[2]);
+    const span = hi - lo;
+    return Math.min(Math.max(((v - lo) / span) * 60 + 20, 5), 95);
+  }
+  return null;
+}
+
+function ValueGauge({ value, range, severity }: { value: string | null; range: string | null; severity: string }) {
+  const pos = parseGaugePosition(value, range);
+  if (pos === null) return null;
+  const sev = getSev(severity);
+
   return (
-    <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide", SEVERITY_COLORS[s] ?? SEVERITY_COLORS.normal)}>
-      {severity ?? "Normal"}
-    </span>
+    <div className="mt-2 px-1">
+      <div className="relative h-2 w-full rounded-full bg-gray-100 overflow-visible">
+        {/* Normal zone highlight */}
+        <div className="absolute inset-y-0 left-[20%] right-[20%] rounded-full bg-emerald-100" />
+        {/* Pointer */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10"
+          style={{ left: `${Math.min(Math.max(pos, 4), 96)}%` }}
+        >
+          <div className={cn("h-4 w-4 rounded-full border-2 border-white shadow-md ring-1 ring-black/10", sev.dot)} />
+        </div>
+      </div>
+      <div className="flex justify-between text-[9px] text-gray-300 mt-1 px-0.5 font-medium">
+        <span>Low</span>
+        <span>Normal Range</span>
+        <span>High</span>
+      </div>
+    </div>
   );
 }
 
+// ── Finding card ────────────────────────────────────────────────────────────
+
 function FindingCard({ finding }: { finding: Finding }) {
+  const [expanded, setExpanded] = useState(false);
+  const sev = getSev(finding.severity);
+  const hasDetails = !!(finding.clinical_findings || finding.recommendations);
+
+  const testTypeLabel = finding.test_type
+    ?.replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase()) ?? "";
+
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden mb-3">
+    <div className={cn(
+      "bg-white rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 border-l-[4px] transition-shadow hover:shadow-md",
+      sev.border
+    )}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
-        <h3 className="text-base font-bold text-gray-900 leading-snug">{finding.name}</h3>
-        <SevBadge severity={finding.severity} />
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[13px] font-bold text-gray-900 leading-snug">{finding.name}</h3>
+            {testTypeLabel && (
+              <span className="mt-0.5 inline-block rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                {testTypeLabel}
+              </span>
+            )}
+          </div>
+          <span className={cn("flex-shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider", sev.badge)}>
+            {sev.label}
+          </span>
+        </div>
       </div>
+
+      {/* Value comparison */}
+      {(finding.value || finding.normal_range) && (
+        <div className="px-4 pb-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">Normal Range</p>
+              <p className="text-sm font-bold text-gray-600 truncate">{finding.normal_range || "—"}</p>
+              {finding.unit && <p className="text-[10px] text-gray-400">{finding.unit}</p>}
+            </div>
+            <div className={cn("rounded-xl px-3 py-2 text-center", sev.value)}>
+              <p className="text-[9px] font-bold uppercase tracking-widest opacity-60 mb-1">Your Value</p>
+              <p className="text-sm font-bold truncate">
+                {finding.value || "—"}{finding.unit ? ` ${finding.unit}` : ""}
+              </p>
+            </div>
+          </div>
+          <ValueGauge value={finding.value} range={finding.normal_range} severity={finding.severity} />
+        </div>
+      )}
 
       {/* Description */}
       {finding.description && (
-        <p className="px-5 pb-4 text-sm text-gray-500 leading-relaxed">{finding.description}</p>
+        <p className="px-4 pb-3 text-[12px] text-gray-500 leading-relaxed">{finding.description}</p>
       )}
 
-      {/* Value vs Normal */}
-      {(finding.value || finding.normal_range) && (
-        <div className="mx-5 mb-4 flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-gray-400 font-medium mb-0.5">{finding.name}</p>
-            <p className="text-xs text-gray-400">
-              Normal: <span className="font-semibold text-gray-600">{finding.normal_range ?? "—"}</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-2 ml-3">
-            <span className="text-lg font-extrabold text-gray-900">
-              {finding.value ?? "—"}{finding.unit ? ` ${finding.unit}` : ""}
-            </span>
-            <SevBadge severity={finding.severity} />
-          </div>
-        </div>
-      )}
+      {/* Expandable details */}
+      {hasDetails && (
+        <>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full flex items-center justify-between px-4 py-2.5 border-t border-gray-50 text-[11px] font-semibold text-gray-400 hover:bg-gray-50 transition-colors"
+          >
+            <span>{expanded ? "Hide details" : "View clinical details"}</span>
+            <svg
+              width="12" height="12" viewBox="0 0 12 12" fill="none"
+              className={cn("transition-transform duration-200", expanded && "rotate-180")}
+            >
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
 
-      {/* Clinical Findings */}
-      {finding.clinical_findings && (
-        <div className="px-5 pb-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Clinical Findings</p>
-          <div className="rounded-xl bg-gray-50 px-4 py-3">
-            <p className="text-sm text-gray-600 leading-relaxed">{finding.clinical_findings}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Recommendations */}
-      {finding.recommendations && (
-        <div className="px-5 pb-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Recommendations</p>
-          <div className="rounded-xl bg-gray-50 px-4 py-3">
-            <p className="text-sm text-gray-600 leading-relaxed">{finding.recommendations}</p>
-          </div>
-        </div>
+          {expanded && (
+            <div className="border-t border-gray-50">
+              {finding.clinical_findings && (
+                <div className="px-4 py-3">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Stethoscope className="h-3 w-3 text-blue-400" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Clinical Findings</p>
+                  </div>
+                  <p className="text-[12px] text-gray-600 leading-relaxed">{finding.clinical_findings}</p>
+                </div>
+              )}
+              {finding.recommendations && (
+                <div className="px-4 py-3 border-t border-gray-50">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Lightbulb className="h-3 w-3 text-amber-400" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Recommendations</p>
+                  </div>
+                  <p className="text-[12px] text-gray-600 leading-relaxed">{finding.recommendations}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
+
+// ── Panel ───────────────────────────────────────────────────────────────────
 
 interface Props {
   organ: OrganScore | null;
@@ -81,67 +214,97 @@ interface Props {
   onClose: () => void;
 }
 
-export default function FindingsPanel({ findings, onClose }: Props) {
-  const [filter, setFilter] = useState<string>("all");
+const TABS = ["all", "critical", "major", "minor", "normal"] as const;
 
-  const severities = ["all", "critical", "major", "minor", "normal"];
+export default function FindingsPanel({ organ, findings, onClose }: Props) {
+  const [filter, setFilter] = useState<typeof TABS[number]>("all");
+
   const counts = Object.fromEntries(
-    severities.map((s) => [s, s === "all" ? findings.length : findings.filter((f) => f.severity?.toLowerCase() === s).length])
-  );
+    TABS.map((s) => [s, s === "all" ? findings.length : findings.filter((f) => f.severity?.toLowerCase() === s).length])
+  ) as Record<typeof TABS[number], number>;
 
   const filtered = filter === "all" ? findings : findings.filter((f) => f.severity?.toLowerCase() === filter);
+
+  const title = organ ? organ.organ_name : "All Findings";
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
 
-      {/* Right-side drawer */}
-      <div className="fixed right-0 inset-y-0 z-50 flex w-full max-w-md flex-col bg-gray-50 shadow-2xl">
+      {/* Drawer */}
+      <div className="fixed right-0 inset-y-0 z-50 flex w-full max-w-[480px] flex-col bg-gray-50 shadow-2xl">
+
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">Overall Report by Severity</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{findings.length} total findings</p>
+        <div className="bg-white border-b border-gray-100 px-5 pt-5 pb-0">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <FlaskConical className="h-4 w-4 text-zen-600" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-zen-600">
+                  {organ ? "Organ Report" : "Full Report"}
+                </p>
+              </div>
+              <h2 className="text-xl font-extrabold text-gray-900 leading-tight">{title}</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {findings.length} finding{findings.length !== 1 ? "s" : ""} · click any card for details
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex-shrink-0 rounded-xl p-2 hover:bg-gray-100 transition-colors mt-0.5"
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-full p-2 hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
 
-        {/* Severity filter tabs */}
-        <div className="flex gap-2 overflow-x-auto border-b border-gray-200 bg-white px-5 py-3">
-          {severities.map((s) => {
-            if (counts[s] === 0 && s !== "all") return null;
-            return (
-              <button
-                key={s}
-                onClick={() => setFilter(s)}
-                className={cn(
-                  "flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-all",
-                  filter === s
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                )}
-              >
-                {s === "all" ? `All (${counts[s]})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${counts[s]})`}
-              </button>
-            );
-          })}
+          {/* Filter tabs */}
+          <div className="flex gap-1 overflow-x-auto pb-0 -mx-1 px-1">
+            {TABS.map((s) => {
+              if (counts[s] === 0 && s !== "all") return null;
+              const active = filter === s;
+              const tok = getSev(s === "all" ? "normal" : s);
+              return (
+                <button
+                  key={s}
+                  onClick={() => setFilter(s)}
+                  className={cn(
+                    "flex-shrink-0 flex items-center gap-1.5 rounded-t-xl px-4 py-2.5 text-[11px] font-bold transition-all border-b-2",
+                    active
+                      ? "bg-gray-50 border-b-2 border-zen-800 text-zen-900"
+                      : "border-transparent text-gray-400 hover:text-gray-700 bg-transparent"
+                  )}
+                >
+                  {s !== "all" && (
+                    <span className={cn("h-2 w-2 rounded-full flex-shrink-0", tok.dot)} />
+                  )}
+                  <span className="capitalize">{s === "all" ? "All" : s}</span>
+                  <span className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold",
+                    active ? "bg-zen-800 text-white" : "bg-gray-100 text-gray-500"
+                  )}>
+                    {counts[s]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Findings list */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
-            <p className="py-16 text-center text-sm text-gray-400">No findings for this filter</p>
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <FlaskConical className="h-7 w-7 text-gray-300" />
+              </div>
+              <p className="text-sm font-semibold text-gray-400">No findings for this filter</p>
+              <p className="text-xs text-gray-300 mt-1">Try selecting a different severity</p>
+            </div>
           ) : (
-            filtered.map((f) => <FindingCard key={f.id} finding={f} />)
+            <div className="p-4 space-y-3">
+              {filtered.map((f) => <FindingCard key={f.id} finding={f} />)}
+            </div>
           )}
         </div>
       </div>

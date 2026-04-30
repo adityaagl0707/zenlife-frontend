@@ -38,16 +38,16 @@ export default function Navbar() {
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-300",
-        scrolled ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-transparent"
+        scrolled ? "bg-cream/95 backdrop-blur-md shadow-sm border-b border-black/5" : "bg-transparent"
       )}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zen-800">
-            <Leaf className="h-4 w-4 text-white" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
+            <Leaf className="h-3.5 w-3.5 text-white" />
           </div>
-          <span className="text-xl font-extrabold tracking-tight text-zen-900">ZenLife</span>
+          <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
         </Link>
 
         {/* Desktop nav */}
@@ -74,7 +74,7 @@ export default function Navbar() {
                 Logout
               </button>
               <Link href="/dashboard" className="btn-primary py-2 text-xs">
-                My Orders
+                My Reports
               </Link>
             </>
           ) : (
@@ -97,7 +97,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-gray-100 bg-white px-6 pb-6 md:hidden">
+        <div className="border-t border-black/5 bg-cream px-6 pb-6 md:hidden">
           <div className="flex flex-col gap-4 pt-4">
             {NAV_LINKS.map((l) => (
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="text-sm font-medium text-gray-700">

@@ -91,27 +91,32 @@ export default function FAQsPage() {
       <Navbar />
       <main>
         {/* Hero */}
-        <section className="bg-zen-900 pt-32 pb-16 text-white">
-          <div className="mx-auto max-w-3xl px-6 text-center">
-            <h1 className="text-5xl font-extrabold">Frequently Asked<br /><span className="text-zen-300">Questions</span></h1>
-            <p className="mt-6 text-lg text-zen-200/80">Everything you need to know about ZenScan and ZenLife.</p>
+        <div className="pt-32 pb-10 bg-cream">
+          <div className="mx-auto max-w-4xl px-6 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">Support</p>
+            <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] leading-tight text-zen-900">
+              Frequently asked questions.
+            </h1>
+            <p className="mx-auto mt-5 max-w-2xl text-[15px] text-gray-500 leading-relaxed">
+              Everything you need to know about ZenScan and ZenLife.
+            </p>
           </div>
-        </section>
+        </div>
 
         {/* FAQ sections */}
         <section className="bg-cream py-20">
           <div className="mx-auto max-w-3xl px-6 space-y-16">
             {FAQ_SECTIONS.map((section) => (
               <div key={section.category}>
-                <h2 className="mb-6 text-2xl font-extrabold text-gray-900">{section.category}</h2>
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">{section.category}</h2>
                 <div className="space-y-3">
                   {section.faqs.map((faq) => (
-                    <details key={faq.q} className="group rounded-2xl border border-gray-100 bg-white px-6 py-5">
-                      <summary className="cursor-pointer list-none flex items-center justify-between font-semibold text-gray-800">
+                    <details key={faq.q} className="group bg-white ring-1 ring-black/5 rounded-2xl px-6 py-5 border-0">
+                      <summary className="cursor-pointer list-none flex items-center justify-between font-semibold text-[14px] text-zen-900">
                         {faq.q}
                         <span className="ml-4 text-zen-600 group-open:rotate-45 transition-transform text-xl font-light flex-shrink-0">+</span>
                       </summary>
-                      <p className="mt-4 text-sm leading-relaxed text-gray-500">{faq.a}</p>
+                      <p className="mt-4 text-[13px] leading-relaxed text-gray-500">{faq.a}</p>
                     </details>
                   ))}
                 </div>
@@ -123,11 +128,11 @@ export default function FAQsPage() {
         {/* Still have questions */}
         <section className="bg-white py-16 text-center">
           <div className="mx-auto max-w-xl px-6">
-            <h2 className="text-2xl font-extrabold text-gray-900">Still have questions?</h2>
+            <h2 className="font-display text-[2rem] text-zen-900">Still have questions?</h2>
             <p className="mt-3 text-gray-500">Our team is available Mon–Sat, 9am–7pm IST.</p>
             <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="tel:8954010099" className="btn-primary py-3 px-8">Call 8954010099</a>
-              <a href="mailto:support@zenlife.health" className="rounded-full border-2 border-zen-800 py-3 px-8 font-semibold text-zen-800 hover:bg-zen-50 transition-colors">
+              <a href="tel:8954010099" className="rounded-full bg-zen-900 py-3 px-8 text-[14px] font-bold text-white hover:bg-zen-800 transition-colors">Call 8954010099</a>
+              <a href="mailto:support@zenlife.health" className="rounded-full border border-zen-900/20 py-3 px-8 font-semibold text-zen-900 hover:bg-zen-50 transition-colors">
                 Email Support
               </a>
             </div>

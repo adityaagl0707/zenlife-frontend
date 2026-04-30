@@ -56,164 +56,232 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left panel — brand */}
-      <div className="hidden flex-col justify-between bg-zen-900 px-12 py-16 lg:flex lg:w-[45%]">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
-            <Leaf className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-2xl font-extrabold text-white">ZenLife</span>
-        </Link>
+    <div className="min-h-screen bg-cream flex flex-col">
 
-        <div className="space-y-8">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-zen-300">Your health, intelligently decoded</p>
-            <h1 className="mt-4 text-5xl font-extrabold leading-tight text-white">
-              Know what's<br />
-              <span className="text-zen-300">inside you.</span>
-            </h1>
-            <p className="mt-6 text-lg leading-relaxed text-zen-200/80">
-              ZenScan combines 300+ biomarkers, full-body MRI, and AI insights from Zeno — so you can act before symptoms appear.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { label: "Conditions Screened", value: "300+" },
-              { label: "Avg. Detection Lead", value: "4–7 yrs" },
-              { label: "Scan Duration", value: "3–4 hrs" },
-              { label: "AI Health Insights", value: "Zeno™" },
-            ].map((s) => (
-              <div key={s.label} className="rounded-2xl bg-white/5 p-4">
-                <p className="text-2xl font-extrabold text-white">{s.value}</p>
-                <p className="mt-1 text-xs text-zen-300">{s.label}</p>
-              </div>
-            ))}
-          </div>
+      {/* ── Top bar — matches dashboard ─────────────────────────────────── */}
+      <header className="border-b border-black/5 bg-cream/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
+              <Leaf className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
+          </Link>
+          <Link
+            href="/"
+            className="text-[12px] font-medium text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            Back to home
+          </Link>
         </div>
+      </header>
 
-        <p className="text-xs text-zen-400">
-          © {new Date().getFullYear()} ZenLife Health Pvt. Ltd. · ZenScan is not a diagnostic service. Results should be reviewed with a qualified physician.
+      {/* ── Page heading ────────────────────────────────────────────────── */}
+      <div className="mx-auto w-full max-w-5xl px-6 pt-12 pb-6">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">
+          Health Records Access
+        </p>
+        <h1 className="font-display text-[clamp(2rem,5vw,3rem)] leading-none text-zen-900">
+          {step === "phone" ? "Sign in to your logbook." : "Verify your identity."}
+        </h1>
+        <p className="mt-2 text-[14px] text-gray-400">
+          {step === "phone"
+            ? "Enter your registered mobile number to continue."
+            : `We sent a 6-digit code to +91 ${phone}.`}
         </p>
       </div>
 
-      {/* Right panel — form */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-16">
-        {/* Mobile logo */}
-        <Link href="/" className="mb-10 flex items-center gap-2 lg:hidden">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zen-800">
-            <Leaf className="h-4 w-4 text-white" />
-          </div>
-          <span className="text-xl font-extrabold text-zen-900">ZenLife</span>
-        </Link>
+      {/* ── Main card + sidebar ──────────────────────────────────────────── */}
+      <main className="mx-auto w-full max-w-5xl px-6 pb-20">
+        <div className="grid gap-6 lg:grid-cols-[1fr_220px]">
 
-        <div className="w-full max-w-sm">
-          {step === "phone" ? (
-            <>
-              <div className="mb-8">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-zen-50">
-                  <Phone className="h-6 w-6 text-zen-800" />
-                </div>
-                <h2 className="text-3xl font-extrabold text-gray-900">Sign in</h2>
-                <p className="mt-2 text-gray-500">Enter your mobile number to receive a one-time passcode.</p>
+          {/* ── Form card ────────────────────────────────────────────────── */}
+          <div className="rounded-3xl bg-white ring-1 ring-black/5 overflow-hidden">
+            {/* Accent bar */}
+            <div className="h-1 w-full bg-gradient-to-r from-zen-400 via-zen-600 to-zen-900" />
+
+            <div className="px-8 py-8 sm:px-10">
+
+              {/* Icon */}
+              <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-2xl bg-cream-dark">
+                {step === "phone"
+                  ? <Phone className="h-5 w-5 text-zen-900" />
+                  : <ShieldCheck className="h-5 w-5 text-zen-900" />
+                }
               </div>
 
-              <form onSubmit={handleSendOtp} className="space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Mobile number</label>
-                  <div className="flex overflow-hidden rounded-xl border border-gray-200 focus-within:border-zen-600 focus-within:ring-2 focus-within:ring-zen-600/20 transition-all">
-                    <span className="flex items-center bg-gray-50 px-4 text-sm font-medium text-gray-500 border-r border-gray-200">
-                      +91
-                    </span>
+              {step === "phone" ? (
+                <form onSubmit={handleSendOtp} className="space-y-5">
+                  <div>
+                    <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                      Mobile number
+                    </label>
+                    <div className="flex overflow-hidden rounded-xl border border-black/8 bg-cream focus-within:border-zen-600 focus-within:ring-2 focus-within:ring-zen-600/15 transition-all">
+                      <span className="flex items-center border-r border-black/8 bg-cream-dark px-4 text-[13px] font-bold text-gray-500">
+                        +91
+                      </span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value.replace(/\D/g, ""));
+                          setError("");
+                        }}
+                        placeholder="98765 43210"
+                        className="flex-1 bg-cream px-4 py-3.5 text-[14px] font-medium text-zen-900 outline-none placeholder:text-gray-300"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <p className="rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-600">
+                      {error}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-zen-900 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-md disabled:opacity-50"
+                  >
+                    {loading
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <><span>Send OTP</span><ArrowRight className="h-4 w-4" /></>
+                    }
+                  </button>
+
+                  <p className="text-center text-[11px] text-gray-400">
+                    By continuing you agree to our{" "}
+                    <Link href="/terms" className="font-semibold text-zen-700 hover:underline">Terms</Link>{" "}
+                    and{" "}
+                    <Link href="/privacy" className="font-semibold text-zen-700 hover:underline">Privacy Policy</Link>.
+                  </p>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-5">
+                  <div>
+                    <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                      One-time passcode
+                    </label>
                     <input
-                      type="tel"
+                      type="text"
                       inputMode="numeric"
-                      maxLength={10}
-                      value={phone}
-                      onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setError(""); }}
-                      placeholder="98765 43210"
-                      className="flex-1 bg-white px-4 py-3.5 text-sm outline-none placeholder:text-gray-300"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => {
+                        setOtp(e.target.value.replace(/\D/g, ""));
+                        setError("");
+                      }}
+                      placeholder="• • • • • •"
+                      className="w-full rounded-xl border border-black/8 bg-cream px-4 py-4 text-center text-[1.6rem] font-bold tracking-[0.5em] text-zen-900 outline-none focus:border-zen-600 focus:ring-2 focus:ring-zen-600/15 transition-all placeholder:text-gray-200 placeholder:tracking-normal"
                       required
                     />
+                    <p className="mt-2 text-center text-[11px] text-gray-400">
+                      Dev mode: use OTP <strong className="text-gray-600">123456</strong>
+                    </p>
                   </div>
-                </div>
 
-                {error && <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{error}</p>}
+                  {error && (
+                    <p className="rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-600">
+                      {error}
+                    </p>
+                  )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary flex w-full items-center justify-center gap-2 py-3.5 text-sm disabled:opacity-60"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Send OTP <ArrowRight className="h-4 w-4" /></>}
-                </button>
-              </form>
-
-              <p className="mt-6 text-center text-xs text-gray-400">
-                By continuing, you agree to our{" "}
-                <Link href="/terms" className="text-zen-700 hover:underline">Terms</Link>{" "}
-                and{" "}
-                <Link href="/privacy" className="text-zen-700 hover:underline">Privacy Policy</Link>.
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="mb-8">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-zen-50">
-                  <ShieldCheck className="h-6 w-6 text-zen-800" />
-                </div>
-                <h2 className="text-3xl font-extrabold text-gray-900">Verify OTP</h2>
-                <p className="mt-2 text-gray-500">
-                  We sent a 6-digit code to{" "}
-                  <span className="font-semibold text-gray-700">+91 {phone}</span>.{" "}
                   <button
-                    onClick={() => { setStep("phone"); setOtp(""); setError(""); }}
-                    className="text-zen-700 hover:underline"
+                    type="submit"
+                    disabled={loading || otp.length !== 6}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-zen-900 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-md disabled:opacity-50"
                   >
-                    Change
+                    {loading
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <><span>Verify &amp; Sign In</span><ArrowRight className="h-4 w-4" /></>
+                    }
                   </button>
-                </p>
+
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => { setStep("phone"); setOtp(""); setError(""); }}
+                      className="text-[12px] font-semibold text-gray-400 hover:text-zen-900 transition-colors"
+                    >
+                      ← Change number
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      className="text-[12px] font-semibold text-zen-700 hover:text-zen-900 transition-colors"
+                    >
+                      Resend OTP
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+
+          {/* ── Right sidebar — stat chips + trust ───────────────────────── */}
+          <div className="space-y-3">
+
+            {/* Stat chips */}
+            {[
+              { value: "300+", label: "Conditions screened" },
+              { value: "3–4h", label: "Scan duration" },
+              { value: "5–7d", label: "Report turnaround" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="flex flex-col items-center rounded-2xl bg-white ring-1 ring-black/5 px-5 py-4 text-center"
+              >
+                <span className="font-display text-[1.6rem] text-zen-900 leading-none">{s.value}</span>
+                <span className="mt-1 text-[11px] text-gray-400 font-medium">{s.label}</span>
               </div>
+            ))}
 
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">One-time passcode</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={otp}
-                    onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "")); setError(""); }}
-                    placeholder="• • • • • •"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-zen-600 focus:ring-2 focus:ring-zen-600/20 transition-all placeholder:text-gray-200 placeholder:tracking-normal"
-                    required
-                  />
-                  <p className="mt-2 text-center text-xs text-gray-400">Dev mode: use OTP <strong>123456</strong></p>
-                </div>
+            {/* Annual card */}
+            <div className="rounded-2xl bg-zen-900 p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-2">
+                New patient?
+              </p>
+              <p className="text-[12px] text-white/60 leading-relaxed">
+                Book a ZenScan to get your personalised health report and access this portal.
+              </p>
+              <Link
+                href="/book"
+                className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-white hover:text-zen-200 transition-colors"
+              >
+                Book ZenScan <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
 
-                {error && <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{error}</p>}
+            {/* Support */}
+            <div className="rounded-xl border border-black/5 bg-white px-4 py-3">
+              <p className="text-[11px] font-semibold text-gray-500">Need help?</p>
+              <a
+                href="tel:8954010099"
+                className="mt-0.5 text-[13px] font-bold text-zen-900 hover:text-zen-700 transition-colors"
+              >
+                8954010099
+              </a>
+            </div>
 
-                <button
-                  type="submit"
-                  disabled={loading || otp.length !== 6}
-                  className="btn-primary flex w-full items-center justify-center gap-2 py-3.5 text-sm disabled:opacity-60"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Verify & Sign In <ArrowRight className="h-4 w-4" /></>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  className="w-full text-center text-sm text-gray-500 hover:text-zen-800"
-                >
-                  Resend OTP
-                </button>
-              </form>
-            </>
-          )}
+          </div>
         </div>
-      </div>
+      </main>
+
+      {/* ── Footer — matches dashboard ───────────────────────────────────── */}
+      <footer className="mt-auto border-t border-black/5">
+        <div className="mx-auto max-w-5xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[11px] text-gray-300">© 2025 ZenLife Health Intelligence</p>
+          <div className="flex items-center gap-5">
+            <Link href="/privacy" className="text-[11px] text-gray-400 hover:text-gray-700">Privacy</Link>
+            <Link href="/terms" className="text-[11px] text-gray-400 hover:text-gray-700">Terms</Link>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 }

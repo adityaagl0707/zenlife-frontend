@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
 
 :root {
   --zen-900: #0a3d2e;
@@ -15,6 +16,13 @@
   --gold-50: #fffbeb;
   --cream: #f8f7f4;
   --cream-dark: #f0ede8;
+  --ink: #1a1614;
+  --stone: #2c2825;
+}
+
+/* Display serif for marketing headlines */
+.font-display {
+  font-family: 'DM Serif Display', Georgia, serif;
 }
 
 @theme inline {

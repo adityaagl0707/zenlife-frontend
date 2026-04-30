@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send, Loader2, Leaf, Home } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Leaf } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { api, ChatMessage } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
@@ -102,22 +102,26 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="flex h-screen flex-col bg-cream">
       {/* Header */}
-      <div className="bg-zen-900 px-6 py-4 flex items-center gap-4">
-        <Link href={`/report/${reportId}`} className="text-zen-300 hover:text-white">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10">
-          <Leaf className="h-5 w-5 text-white" />
+      <header className="bg-cream/95 backdrop-blur-md border-b border-black/5">
+        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
+          <Link
+            href={`/report/${reportId}`}
+            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5 text-gray-500 hover:text-zen-900 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zen-900">
+            <Leaf className="h-4 w-4 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[13px] font-bold text-zen-900 leading-none">Zeno</p>
+            <p className="text-[10px] text-gray-400">Your personal health AI · ZenLife</p>
+          </div>
+          <Link href="/dashboard" className="text-[11px] font-semibold text-gray-400 hover:text-zen-900 transition-colors">
+            My Reports
+          </Link>
         </div>
-        <div className="flex-1">
-          <p className="font-bold text-white">Zeno</p>
-          <p className="text-xs text-zen-300">Your personal health AI · ZenLife</p>
-        </div>
-        <Link href="/dashboard" className="flex items-center gap-1.5 text-xs text-zen-300 hover:text-white transition-colors">
-          <Home className="h-4 w-4" />
-          <span className="hidden sm:inline">Dashboard</span>
-        </Link>
-      </div>
+      </header>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-3xl mx-auto w-full">
@@ -135,9 +139,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Hi, I'm Zeno</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Hi, I&apos;m Zeno</h2>
                   <p className="mt-2 text-sm text-gray-500 max-w-sm mx-auto">
-                    I've read your full ZenReport and I'm here to explain your findings, answer questions, and help you understand your health.
+                    I&apos;ve read your full ZenReport and I&apos;m here to explain your findings, answer questions, and help you understand your health.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
@@ -145,7 +149,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                     <button
                       key={s}
                       onClick={() => send(s)}
-                      className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 hover:border-zen-400 hover:bg-zen-50 transition-colors shadow-sm"
+                      className="rounded-xl border border-black/8 bg-white px-4 py-3 text-left text-sm text-gray-700 hover:border-zen-400 hover:bg-zen-50 transition-colors shadow-sm"
                     >
                       {s}
                     </button>
@@ -181,7 +185,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-200 bg-white px-4 py-4">
+      <div className="border-t border-black/8 bg-cream px-4 py-4">
         <div className="mx-auto max-w-3xl">
           <div className="flex gap-3 items-end">
             <textarea
@@ -190,13 +194,13 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Ask Zeno about your report…"
               rows={1}
-              className="flex-1 resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-zen-500 focus:ring-2 focus:ring-zen-500/20 transition-all"
+              className="flex-1 resize-none bg-white border border-black/8 rounded-2xl px-4 py-3 text-sm outline-none focus:border-zen-500 focus:ring-2 focus:ring-zen-500/20 transition-all"
               style={{ maxHeight: 120 }}
             />
             <button
               onClick={() => send()}
               disabled={!input.trim() || sending}
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-zen-800 text-white disabled:opacity-40 hover:bg-zen-700 transition-colors"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-zen-900 text-white disabled:opacity-40 hover:bg-zen-800 transition-colors"
             >
               <Send className="h-4 w-4" />
             </button>

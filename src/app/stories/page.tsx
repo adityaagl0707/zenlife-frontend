@@ -78,25 +78,27 @@ export default function StoriesPage() {
       <Navbar />
       <main>
         {/* Hero */}
-        <section className="bg-zen-900 pt-32 pb-20 text-white">
+        <div className="pt-32 pb-10 bg-cream">
           <div className="mx-auto max-w-4xl px-6 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-zen-300">Real People. Real Results.</p>
-            <h1 className="mt-4 text-5xl font-extrabold leading-tight">
-              Stories That<br />
-              <span className="text-zen-300">Changed Lives</span>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">Real People. Real Results.</p>
+            <h1 className="font-display text-[clamp(2.5rem,6vw,4rem)] leading-tight text-zen-900">
+              Stories that changed lives.
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-zen-200/80">
+            <p className="mx-auto mt-5 max-w-2xl text-[15px] text-gray-500 leading-relaxed">
               Every ZenScan tells a story. Here are a few from our community of proactive health seekers.
             </p>
           </div>
-        </section>
+        </div>
 
         {/* Stories grid */}
         <section className="bg-cream py-20">
           <div className="mx-auto max-w-7xl px-6">
+            <div className="mb-12 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Member Stories</p>
+            </div>
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {STORIES.map((s) => (
-                <div key={s.name} className="card flex flex-col gap-5">
+                <div key={s.name} className="rounded-2xl bg-white ring-1 ring-black/5 p-6 flex flex-col gap-5">
                   <div className="flex items-center gap-4">
                     <div className={`flex h-12 w-12 items-center justify-center rounded-full text-white font-bold ${s.color}`}>
                       {s.initials}
@@ -106,10 +108,10 @@ export default function StoriesPage() {
                       <p className="text-xs text-gray-400">{s.age} · {s.city}</p>
                     </div>
                   </div>
-                  <div className="rounded-xl bg-zen-50 px-4 py-2 text-xs font-semibold text-zen-700">
+                  <div className="rounded-full bg-cream-dark px-4 py-1.5 text-[11px] font-bold text-zen-900 self-start">
                     {s.condition}
                   </div>
-                  <p className="text-sm leading-relaxed text-gray-600 italic">"{s.quote}"</p>
+                  <p className="text-[13px] leading-relaxed text-gray-600 italic">"{s.quote}"</p>
                   <div className="flex gap-1 mt-auto">
                     {Array.from({ length: s.stars }).map((_, i) => (
                       <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
@@ -124,9 +126,9 @@ export default function StoriesPage() {
         {/* CTA */}
         <section className="bg-zen-900 py-20 text-white text-center">
           <div className="mx-auto max-w-xl px-6">
-            <h2 className="text-3xl font-extrabold">Write your own story.</h2>
+            <h2 className="font-display text-[2rem] text-white">Write your own story.</h2>
             <p className="mt-4 text-zen-200">Join thousands of Indians discovering what's happening inside their bodies — before symptoms appear.</p>
-            <Link href="/book" className="mt-8 inline-block rounded-full bg-white px-10 py-4 font-bold text-zen-900 hover:bg-zen-50 transition-colors">
+            <Link href="/book" className="mt-8 inline-block rounded-full bg-white px-8 py-3.5 text-[14px] font-bold text-zen-900">
               Book ZenScan
             </Link>
           </div>
