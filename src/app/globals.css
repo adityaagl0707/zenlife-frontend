@@ -2,38 +2,18 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
 
 :root {
-  /* Brand palette
-   * Green  #10A8B2  (primary teal)
-   * Orange #FE8A70  (accent)
-   * Yellow #FFDD7B  (highlight)
-   */
-  --brand-green: #10A8B2;
-  --brand-orange: #FE8A70;
-  --brand-yellow: #FFDD7B;
-
-  /* Zen (green/teal) scale — re-toned to brand green #10A8B2 as the 600 step */
-  --zen-900: #0a3a3e;
-  --zen-800: #0d575d;
-  --zen-700: #0e7a82;
-  --zen-600: #10a8b2;
-  --zen-500: #2dbcc6;
-  --zen-400: #5fd1d9;
-  --zen-200: #b9eff3;
-  --zen-100: #dcf7f9;
-  --zen-50: #effbfc;
-
-  /* Gold/yellow scale — re-toned to brand yellow #FFDD7B */
-  --gold-500: #FFDD7B;
-  --gold-400: #ffe79e;
-  --gold-50: #fffaeb;
-
-  /* Orange scale — built around brand orange #FE8A70 */
-  --orange-500: #FE8A70;
-  --orange-400: #ffa993;
-  --orange-300: #ffc4b5;
-  --orange-100: #ffe2d8;
-  --orange-50: #fff3ee;
-
+  --zen-900: #0a3d2e;
+  --zen-800: #0e5c45;
+  --zen-700: #117a5c;
+  --zen-600: #159872;
+  --zen-500: #1ab589;
+  --zen-400: #3dd6a8;
+  --zen-200: #b8f2e4;
+  --zen-100: #e0faf4;
+  --zen-50: #f0fdf9;
+  --gold-500: #d97706;
+  --gold-400: #f59e0b;
+  --gold-50: #fffbeb;
   --cream: #f8f7f4;
   --cream-dark: #f0ede8;
   --ink: #1a1614;
@@ -52,21 +32,12 @@
   --color-zen-600: var(--zen-600);
   --color-zen-500: var(--zen-500);
   --color-zen-400: var(--zen-400);
-  --color-zen-300: var(--zen-400);
   --color-zen-200: var(--zen-200);
   --color-zen-100: var(--zen-100);
   --color-zen-50: var(--zen-50);
   --color-gold-500: var(--gold-500);
   --color-gold-400: var(--gold-400);
   --color-gold-50: var(--gold-50);
-  --color-orange-500: var(--orange-500);
-  --color-orange-400: var(--orange-400);
-  --color-orange-300: var(--orange-300);
-  --color-orange-100: var(--orange-100);
-  --color-orange-50: var(--orange-50);
-  --color-brand-green: var(--brand-green);
-  --color-brand-orange: var(--brand-orange);
-  --color-brand-yellow: var(--brand-yellow);
   --color-cream: var(--cream);
   --color-cream-dark: var(--cream-dark);
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
@@ -94,8 +65,7 @@ body {
 /* Buttons */
 .btn-primary { @apply inline-flex items-center gap-2 rounded-full bg-zen-800 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zen-900 hover:shadow-lg active:scale-95; }
 .btn-outline { @apply inline-flex items-center gap-2 rounded-full border-2 border-zen-800 px-6 py-3 text-sm font-semibold text-zen-800 transition-all hover:bg-zen-50 active:scale-95; }
-.btn-gold { @apply inline-flex items-center gap-2 rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-zen-900 transition-all hover:bg-gold-400 active:scale-95; }
-.btn-orange { @apply inline-flex items-center gap-2 rounded-full bg-orange-500 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-400 active:scale-95; }
+.btn-gold { @apply inline-flex items-center gap-2 rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-amber-700 active:scale-95; }
 
 /* Animations */
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
