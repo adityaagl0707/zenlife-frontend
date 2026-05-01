@@ -401,7 +401,7 @@ export default function DashboardPage() {
                 <StatChip value={String(publishedOrders.length)} label="Reports ready" />
                 <StatChip
                   value={latestOrder?.scan_date
-                    ? new Date(latestOrder.scan_date).toLocaleDateString("en-IN", { month: "short", year: "numeric" })
+                    ? new Date(latestOrder.scan_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
                     : "—"}
                   label="Last scan"
                 />
