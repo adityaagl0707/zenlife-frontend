@@ -1369,7 +1369,7 @@ export default function AdminPage() {
                       {/* ── 1. Generate Report button — always at top ── */}
                       <button
                         onClick={handleGenerate}
-                        disabled={generating || organs.length === 0}
+                        disabled={generating}
                         className="w-full rounded-2xl bg-zen-800 py-4 text-base font-bold text-white hover:bg-zen-700 disabled:opacity-50 flex items-center justify-center gap-3 transition-all shadow-md"
                       >
                         {generating ? (
@@ -1380,9 +1380,6 @@ export default function AdminPage() {
                           <><Sparkles className="h-5 w-5" /> Generate Report</>
                         )}
                       </button>
-                      {organs.length === 0 && !generating && (
-                        <p className="text-center text-xs text-gray-400 -mt-3">Enter & save report data in the previous tab first.</p>
-                      )}
 
                       {/* ── 2. ZenScore — always visible, placeholder when no data ── */}
                       <div className={`card border flex items-center gap-6 ${organs.length > 0 ? scoreBg : "bg-gray-50 border-gray-200"}`}>
@@ -1460,20 +1457,17 @@ export default function AdminPage() {
                         )}
                       </div>
 
-                      {/* ── Preview Report ── */}
-                      {isGenerated && (
-                        <Link
-                          href={`/report/${selectedReportId}?admin=1`}
-                          target="_blank"
-                          className="flex items-center justify-center gap-2 w-full rounded-2xl border-2 border-zen-800 py-3 text-sm font-bold text-zen-800 hover:bg-zen-50 transition-all"
-                        >
-                          Preview Report →
-                        </Link>
-                      )}
+                      {/* ── Preview Report — always visible ── */}
+                      <Link
+                        href={`/report/${selectedReportId}?admin=1`}
+                        target="_blank"
+                        className="flex items-center justify-center gap-2 w-full rounded-2xl border-2 border-zen-800 py-3 text-sm font-bold text-zen-800 hover:bg-zen-50 transition-all"
+                      >
+                        Preview Report →
+                      </Link>
 
-                      {/* ── Publish / Status ── */}
-                      {isGenerated && (
-                        <div className={cn("rounded-2xl border px-5 py-4 space-y-3", isPublished ? "bg-emerald-50 border-emerald-200" : "bg-white border-gray-200")}>
+                      {/* ── Publish / Status — always visible ── */}
+                      <div className={cn("rounded-2xl border px-5 py-4 space-y-3", isPublished ? "bg-emerald-50 border-emerald-200" : "bg-white border-gray-200")}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className={cn("h-2.5 w-2.5 rounded-full", isPublished ? "bg-emerald-500 animate-pulse" : "bg-amber-400")} />
@@ -1498,7 +1492,6 @@ export default function AdminPage() {
                             </button>
                           )}
                         </div>
-                      )}
 
                       {/* Danger zone */}
                       <div className="card border border-red-100 space-y-2">
