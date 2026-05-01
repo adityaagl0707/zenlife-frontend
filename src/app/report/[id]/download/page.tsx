@@ -78,7 +78,7 @@ export default function DownloadPage({ params }: { params: Promise<{ id: string 
             <h1 className="font-display text-[clamp(2rem,5vw,3rem)] leading-none text-zen-900">Download &amp; share.</h1>
             {report && (
               <p className="mt-3 text-[14px] text-gray-500">
-                {report.patient_name} · {new Date(report.report_date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                {report.patient_name}{report.report_date ? ` · ${new Date(report.report_date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}` : ""}
               </p>
             )}
           </div>

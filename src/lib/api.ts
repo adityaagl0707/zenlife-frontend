@@ -69,16 +69,17 @@ export interface Order {
 
 export interface Report {
   id: number;
+  is_published: boolean;
   patient_name: string;
-  patient_age: number;
-  patient_gender: string;
+  patient_age?: number;
+  patient_gender?: string;
   booking_id: string;
-  coverage_index: number;
-  overall_severity: string;
-  report_date: string;
-  next_visit: string;
-  summary: string;
-  finding_counts: { critical: number; major: number; minor: number; normal: number };
+  coverage_index?: number;
+  overall_severity?: string;
+  report_date?: string;
+  next_visit?: string;
+  summary?: string;
+  finding_counts?: { critical: number; major: number; minor: number; normal: number };
 }
 
 export interface OrganScore {
