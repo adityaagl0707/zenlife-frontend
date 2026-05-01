@@ -216,11 +216,27 @@ function SectionPanel({
         method: "POST",
         body: formData,
       });
+      // Read once as text, then try to parse — gives us better error
+      // messages when the upstream returns an HTML page (504, 502, 413).
+      const text = await res.text();
+      let data: { detail?: string; extracted?: Record<string, unknown> } = {};
+      try { data = JSON.parse(text); } catch { /* not JSON */ }
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Extraction failed");
+        let msg = data.detail;
+        if (!msg) {
+          if (res.status === 504) {
+            msg = "AI extraction timed out (>5 min). Try a smaller / clearer file or enter values manually.";
+          } else if (res.status === 502 || res.status === 503) {
+            msg = "Server is restarting. Try again in 30 seconds.";
+          } else if (res.status === 413) {
+            msg = "File is too large (>25 MB). Compress the PDF or split it.";
+          } else {
+            msg = `Extraction failed (HTTP ${res.status}). Try again or enter values manually.`;
+          }
+        }
+        throw new Error(msg);
       }
-      const data = await res.json();
       const extracted = data.extracted || {};
       setParams((prev) => {
         const updated = { ...prev };
