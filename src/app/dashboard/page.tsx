@@ -249,10 +249,17 @@ export default function DashboardPage() {
     router.push("/");
   }
 
-  const completedOrders = orders.filter((o) => o.has_report && o.report_id);
-  const latestOrder = orders[0] ?? null;
-  const latestReportOrder = completedOrders[0] ?? null;
-  const totalScans = orders.length;
+  // Sort orders by scan_date desc — "Latest" is purely DB-driven
+  const sortedOrders = [...orders].sort((a, b) => {
+    const ta = a.scan_date ? new Date(a.scan_date).getTime() : 0;
+    const tb = b.scan_date ? new Date(b.scan_date).getTime() : 0;
+    return tb - ta;
+  });
+  // "Reports ready" = report has been published (not just exists in draft)
+  const publishedOrders = sortedOrders.filter((o) => o.is_published && o.report_id);
+  const latestOrder = sortedOrders[0] ?? null;
+  const latestReportOrder = publishedOrders[0] ?? null;
+  const totalScans = sortedOrders.length;
 
   return (
     <div className="min-h-screen bg-cream">
@@ -391,7 +398,7 @@ export default function DashboardPage() {
               {/* Stats row */}
               <div className="mb-6 grid grid-cols-3 gap-3">
                 <StatChip value={String(totalScans)} label="Total scans" />
-                <StatChip value={String(completedOrders.length)} label="Reports ready" />
+                <StatChip value={String(publishedOrders.length)} label="Reports ready" />
                 <StatChip
                   value={latestOrder?.scan_date
                     ? new Date(latestOrder.scan_date).toLocaleDateString("en-IN", { month: "short", year: "numeric" })
@@ -418,7 +425,7 @@ export default function DashboardPage() {
 
               {/* Logbook entries */}
               <div className="space-y-3">
-                {orders.map((order, i) => (
+                {sortedOrders.map((order, i) => (
                   <ScanEntry key={order.id} order={order} isLatest={i === 0} />
                 ))}
               </div>
