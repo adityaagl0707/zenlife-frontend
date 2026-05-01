@@ -1276,9 +1276,6 @@ export default function AdminPage() {
                       <option value="pending">Pending</option>
                     </Select>
                   </Field>
-                  <Field label="Next Visit Date">
-                    <Input type="date" value={reportForm.next_visit} onChange={e => setReportForm({...reportForm, next_visit: e.target.value})} />
-                  </Field>
                 </div>
               </div>
 
