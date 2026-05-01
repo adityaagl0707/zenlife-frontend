@@ -1384,52 +1384,67 @@ export default function AdminPage() {
                         <p className="text-center text-xs text-gray-400 -mt-3">Enter & save report data in the previous tab first.</p>
                       )}
 
-                      {/* ── 2. ZenScore — only show when organs exist ── */}
-                      {organs.length > 0 && (
-                        <div className={`card border ${scoreBg} flex items-center gap-6`}>
-                          <div className="text-center min-w-[80px]">
+                      {/* ── 2. ZenScore — always visible, placeholder when no data ── */}
+                      <div className={`card border flex items-center gap-6 ${organs.length > 0 ? scoreBg : "bg-gray-50 border-gray-200"}`}>
+                        <div className="text-center min-w-[80px]">
+                          {organs.length > 0 ? (
                             <p className={`text-5xl font-black ${scoreColor}`}>{computedScore}</p>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">ZenScore</p>
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <p className="text-sm font-bold text-gray-700">Auto-computed from organ scores</p>
-                            <div className="flex flex-wrap gap-2 text-[11px]">
-                              {criticalOrgans.length > 0 && <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 font-semibold">{criticalOrgans.length} critical (−{criticalOrgans.length * 15} pts)</span>}
-                              {majorOrgans.length   > 0 && <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 font-semibold">{majorOrgans.length} major (−{majorOrgans.length * 7} pts)</span>}
-                              {minorOrgans.length   > 0 && <span className="rounded-full bg-yellow-100 text-yellow-700 px-2 py-0.5 font-semibold">{minorOrgans.length} minor (−{minorOrgans.length * 3} pts)</span>}
-                              {organs.filter(o => o.severity?.toLowerCase() === "normal").length > 0 && <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 font-semibold">{organs.filter(o => o.severity?.toLowerCase() === "normal").length} normal</span>}
-                            </div>
-                            <p className="text-[11px] text-gray-400">100 − (critical×15) − (major×7) − (minor×3)</p>
-                          </div>
+                          ) : (
+                            <p className="text-5xl font-black text-gray-300">—</p>
+                          )}
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">ZenScore</p>
                         </div>
-                      )}
+                        <div className="flex-1 space-y-1">
+                          {organs.length > 0 ? (
+                            <>
+                              <p className="text-sm font-bold text-gray-700">Auto-computed from organ scores</p>
+                              <div className="flex flex-wrap gap-2 text-[11px]">
+                                {criticalOrgans.length > 0 && <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 font-semibold">{criticalOrgans.length} critical (−{criticalOrgans.length * 15} pts)</span>}
+                                {majorOrgans.length   > 0 && <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 font-semibold">{majorOrgans.length} major (−{majorOrgans.length * 7} pts)</span>}
+                                {minorOrgans.length   > 0 && <span className="rounded-full bg-yellow-100 text-yellow-700 px-2 py-0.5 font-semibold">{minorOrgans.length} minor (−{minorOrgans.length * 3} pts)</span>}
+                                {organs.filter(o => o.severity?.toLowerCase() === "normal").length > 0 && <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 font-semibold">{organs.filter(o => o.severity?.toLowerCase() === "normal").length} normal</span>}
+                              </div>
+                              <p className="text-[11px] text-gray-400">100 − (critical×15) − (major×7) − (minor×3)</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm font-semibold text-gray-400">Will be computed after report data is entered</p>
+                              <p className="text-[11px] text-gray-300">Formula: 100 − (critical×15) − (major×7) − (minor×3)</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
 
-                      {/* ── 3. AI Summary — only when organs exist ── */}
-                      {organs.length > 0 && (
-                        <div className="card space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-zen-600" />
-                            <p className="text-sm font-bold text-gray-700">AI Summary <span className="text-xs font-normal text-gray-400">(auto-generated · edit if needed)</span></p>
-                          </div>
+                      {/* ── 3. AI Summary — always visible, placeholder when no data ── */}
+                      <div className="card space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-zen-600" />
+                          <p className="text-sm font-bold text-gray-700">AI Summary <span className="text-xs font-normal text-gray-400">(auto-generated · edit if needed)</span></p>
+                        </div>
+                        {organs.length > 0 ? (
                           <Textarea
                             rows={4}
                             value={editedSummary || generatedSummary}
                             onChange={e => setEditedSummary(e.target.value)}
                             className="text-sm text-gray-700"
                           />
-                        </div>
-                      )}
-
-                      {/* ── 4. Body Age — shown after generation ── */}
-                      {isGenerated && <BodyAgeSection reportId={selectedReportId!} />}
-
-                      {/* ── 5. Health Priorities — shown after generation ── */}
-                      {isGenerated && priorities.length > 0 && (
-                        <div className="card space-y-3">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                            <p className="text-sm font-bold text-gray-700">Health Priorities ({priorities.length})</p>
+                        ) : (
+                          <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center">
+                            <p className="text-sm text-gray-400">AI summary will appear here after report data is entered and generated.</p>
                           </div>
+                        )}
+                      </div>
+
+                      {/* ── 4. Body Age — always visible, placeholder until generated ── */}
+                      <BodyAgeSection reportId={selectedReportId!} />
+
+                      {/* ── 5. Health Priorities — always visible, placeholder until generated ── */}
+                      <div className="card space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-amber-500" />
+                          <p className="text-sm font-bold text-gray-700">Health Priorities</p>
+                        </div>
+                        {priorities.length > 0 ? (
                           <div className="space-y-1.5">
                             {priorities.map(p => (
                               <div key={p.id} className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2 text-sm">
@@ -1438,8 +1453,12 @@ export default function AdminPage() {
                               </div>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center">
+                            <p className="text-sm text-gray-400">Health priorities will be AI-generated when you click Generate Report.</p>
+                          </div>
+                        )}
+                      </div>
 
                       {/* ── Preview Report ── */}
                       {isGenerated && (
