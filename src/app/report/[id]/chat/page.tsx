@@ -8,11 +8,11 @@ import { api, ChatMessage } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-const STARTERS = [
+const FALLBACK_STARTERS = [
   "What are my most critical findings?",
-  "Can you explain my calcium score?",
   "What lifestyle changes should I make?",
   "How serious is my ZenScore?",
+  "Which findings need urgent attention?",
 ];
 
 function Message({ msg }: { msg: ChatMessage }) {
@@ -63,6 +63,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [starters, setStarters] = useState<string[]>(FALLBACK_STARTERS);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,6 +72,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       .history(reportId)
       .then(setMessages)
       .finally(() => setLoading(false));
+    api.chat
+      .starters(reportId)
+      .then((d) => {
+        if (d?.starters?.length) setStarters(d.starters.slice(0, 4));
+      })
+      .catch(() => { /* keep fallback */ });
   }, [reportId, router]);
 
   useEffect(() => {
@@ -145,7 +152,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
-                  {STARTERS.map((s) => (
+                  {starters.map((s) => (
                     <button
                       key={s}
                       onClick={() => send(s)}

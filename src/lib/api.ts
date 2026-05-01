@@ -72,6 +72,7 @@ export const api = {
     history: (reportId: number) => request<ChatMessage[]>(`/chat/${reportId}/history`),
     send: (reportId: number, message: string) =>
       request<ChatMessage>(`/chat/${reportId}/message`, { method: "POST", body: JSON.stringify({ message }) }),
+    starters: (reportId: number) => request<{ starters: string[] }>(`/chat/${reportId}/starters`),
   },
 };
 
