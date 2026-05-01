@@ -131,7 +131,7 @@ export default function HomePage() {
                   href="/book"
                   className="inline-flex items-center gap-2 rounded-full bg-zen-900 px-8 py-4 text-[15px] font-semibold text-white transition-all hover:bg-zen-800 hover:shadow-xl active:scale-95"
                 >
-                  Book ZenScan — ₹27,500
+                  Book ZenScan
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link

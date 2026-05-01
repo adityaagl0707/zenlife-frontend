@@ -346,7 +346,7 @@ export default function DashboardPage() {
                   href="/book"
                   className="mt-7 inline-flex items-center gap-2 rounded-full bg-zen-900 px-7 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-lg"
                 >
-                  Book ZenScan — ₹27,500
+                  Book ZenScan
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
