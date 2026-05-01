@@ -425,7 +425,7 @@ function LabResultsSection({ reportId, onImported }: { reportId: number; onImpor
 
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-center">
-        <a href={`${BASE}/admin/lab-template`} download className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">
+        <a href={`${BASE}/admin/lab-template?report_id=${reportId}`} download className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">
           <Download className="h-3.5 w-3.5" /> Download Template
         </a>
         <button onClick={() => fileRef.current?.click()} disabled={uploading}
