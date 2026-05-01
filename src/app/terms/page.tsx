@@ -39,7 +39,7 @@ export default function TermsPage() {
               },
               {
                 title: "7. Governing Law",
-                body: "These terms are governed by the laws of India. Disputes shall be subject to exclusive jurisdiction of the courts of Bengaluru, Karnataka.",
+                body: "These terms are governed by the laws of India. Disputes shall be subject to exclusive jurisdiction of the courts of Noida, Uttar Pradesh.",
               },
             ].map((s) => (
               <section key={s.title} className="rounded-2xl bg-white ring-1 ring-black/5 p-6">

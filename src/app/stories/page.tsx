@@ -7,7 +7,7 @@ const STORIES = [
   {
     name: "Rajesh Kumar",
     age: 44,
-    city: "Bengaluru",
+    city: "Noida",
     initials: "RK",
     color: "bg-zen-800",
     condition: "Silent heart disease detected",
@@ -18,7 +18,7 @@ const STORIES = [
   {
     name: "Priya Shankar",
     age: 38,
-    city: "Mumbai",
+    city: "Noida",
     initials: "PS",
     color: "bg-gold-500",
     condition: "Early-stage thyroid nodule identified",
@@ -29,7 +29,7 @@ const STORIES = [
   {
     name: "Amit Desai",
     age: 52,
-    city: "Delhi",
+    city: "Noida",
     initials: "AD",
     color: "bg-emerald-700",
     condition: "Severe osteoporosis (DEXA) + action plan",
@@ -40,7 +40,7 @@ const STORIES = [
   {
     name: "Meera Nair",
     age: 34,
-    city: "Kochi",
+    city: "Noida",
     initials: "MN",
     color: "bg-zen-600",
     condition: "Metabolic syndrome diagnosed early",
@@ -51,7 +51,7 @@ const STORIES = [
   {
     name: "Vikram Reddy",
     age: 47,
-    city: "Hyderabad",
+    city: "Noida",
     initials: "VR",
     color: "bg-amber-600",
     condition: "Lung nodule — monitoring initiated",
@@ -62,7 +62,7 @@ const STORIES = [
   {
     name: "Ananya Iyer",
     age: 29,
-    city: "Chennai",
+    city: "Noida",
     initials: "AI",
     color: "bg-purple-700",
     condition: "Peace of mind — all clear",

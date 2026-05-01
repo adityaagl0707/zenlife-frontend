@@ -64,7 +64,7 @@ export default function ScanPage() {
                 <Clock className="h-3.5 w-3.5" /> 3–4 hours
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-cream-dark px-4 py-2 text-[12px] font-semibold text-zen-900">
-                <MapPin className="h-3.5 w-3.5" /> Bengaluru (more cities soon)
+                <MapPin className="h-3.5 w-3.5" /> Noida (more cities soon)
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-cream-dark px-4 py-2 text-[12px] font-semibold text-zen-900">
                 <Star className="h-3.5 w-3.5" /> 4.9 / 5 avg. rating

@@ -35,7 +35,7 @@ export default function PrivacyPage() {
               },
               {
                 title: "6. Contact",
-                body: "For privacy-related queries, contact our Data Protection Officer at privacy@zenlife.health or write to ZenLife Health Pvt. Ltd., Bengaluru, Karnataka, India.",
+                body: "For privacy-related queries, contact our Data Protection Officer at privacy@zenlife.health or write to ZenLife Health Pvt. Ltd., Noida, Uttar Pradesh, India.",
               },
             ].map((s) => (
               <section key={s.title} className="rounded-2xl bg-white ring-1 ring-black/5 p-6">

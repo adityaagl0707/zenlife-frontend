@@ -29,7 +29,7 @@ const FAQ_SECTIONS = [
     faqs: [
       {
         q: "Where is ZenScan available?",
-        a: "Currently available in Bengaluru, with Mumbai and Delhi NCR launching soon. We partner with premium diagnostic centres equipped with high-field MRI and advanced CT scanners.",
+        a: "Currently available in Noida. We partner with premium diagnostic centres equipped with high-field MRI and advanced CT scanners.",
       },
       {
         q: "How do I book?",

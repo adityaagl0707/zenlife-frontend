@@ -102,7 +102,7 @@ function BookingSidebar({ selectedDate, selectedSlot }: { selectedDate: Date | n
             )}
             <div className="flex items-center gap-2 text-[13px]">
               <MapPin className="h-3.5 w-3.5 text-zen-400 flex-shrink-0" />
-              <span className="text-white/70">Bengaluru</span>
+              <span className="text-white/70">Noida</span>
             </div>
           </div>
         )}
@@ -195,7 +195,7 @@ export default function BookPage() {
                 {[
                   { label: "Date", value: selectedDate?.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) },
                   { label: "Time", value: selectedSlot },
-                  { label: "Location", value: "Bengaluru" },
+                  { label: "Location", value: "Noida" },
                   { label: "Amount", value: "₹27,500" },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between text-[13px]">
@@ -404,7 +404,7 @@ export default function BookPage() {
                         {[
                           { label: "Date", value: selectedDate?.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) },
                           { label: "Time", value: selectedSlot },
-                          { label: "Location", value: "Bengaluru" },
+                          { label: "Location", value: "Noida" },
                           { label: "Patient", value: `${form.name}, ${form.age}${form.age ? " yrs" : ""} · ${form.gender}` },
                           { label: "Contact", value: form.phone },
                         ].map(({ label, value }) => (

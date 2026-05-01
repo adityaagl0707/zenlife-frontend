@@ -54,19 +54,19 @@ const STORIES = [
   {
     quote: "The ZenScan found a calcium score of 480 at age 34. My routine ECG the month before was completely normal. This literally saved my life.",
     name: "Rohit S.",
-    detail: "34 · Software Engineer · Bangalore",
+    detail: "34 · Software Engineer · Noida",
     finding: "Calcium Score 480 — Critical cardiac risk",
   },
   {
     quote: "I booked it thinking I was healthy. Zeno walked me through every finding at midnight. I left knowing more about my body than in 41 years of living in it.",
     name: "Priya M.",
-    detail: "41 · Founder · Mumbai",
+    detail: "41 · Founder · Noida",
     finding: "Silent fatty liver + elevated homocysteine",
   },
   {
     quote: "2.8cm thyroid nodule. My GP had been doing blood tests for three years and never flagged it. The MRI found it on day one.",
     name: "Vikram N.",
-    detail: "29 · Consultant · Hyderabad",
+    detail: "29 · Consultant · Noida",
     finding: "2.8cm thyroid nodule — surgically removed",
   },
 ];
