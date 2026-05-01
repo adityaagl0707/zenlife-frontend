@@ -1194,33 +1194,17 @@ export default function AdminPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {p.orders.map((o) => (
-                        <div key={o.id} className="text-right">
-                          <p className="text-xs font-semibold text-gray-600">{o.booking_id}</p>
-                          {o.has_report && o.report_id && (
-                            <>
-                              <span className={cn("inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mb-0.5", o.is_published ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")}>
-                                {o.is_published ? "Published" : "Draft"}
-                              </span>
-                              <br />
-                              <Link href={`/report/${o.report_id}?admin=1`} className="text-xs text-zen-600 hover:underline">View Report →</Link>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => {
-                          setSelectedPatient(p);
-                          if (p.orders[0]?.report_id) { setSelectedReportId(p.orders[0].report_id); setReportStep("test_status"); }
-                          else { setSelectedOrderId(p.orders[0]?.id ?? null); setReportStep("test_status"); }
-                          setView("patient");
-                        }}
-                        className="rounded-full border border-gray-200 p-2 hover:bg-gray-100"
-                      >
-                        <ChevronRight className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedPatient(p);
+                        if (p.orders[0]?.report_id) { setSelectedReportId(p.orders[0].report_id); setReportStep("test_status"); }
+                        else { setSelectedOrderId(p.orders[0]?.id ?? null); setReportStep("test_status"); }
+                        setView("patient");
+                      }}
+                      className="rounded-full border border-gray-200 p-2 hover:bg-gray-100"
+                    >
+                      <ChevronRight className="h-4 w-4 text-gray-500" />
+                    </button>
                   </div>
                 ))}
               </div>
