@@ -1066,8 +1066,8 @@ export default function AdminPage() {
 
   // Generate booking ID
   function genBookingId() {
-    const num = Math.floor(Math.random() * 90000) + 10000;
-    setOrderForm(f => ({ ...f, booking_id: `ZEN${num}` }));
+    const num = Math.floor(Math.random() * 900000) + 100000;
+    setOrderForm(f => ({ ...f, booking_id: `Order${num}` }));
   }
 
   async function handleCreatePatient(e: React.FormEvent) {
@@ -1248,7 +1248,7 @@ export default function AdminPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Booking ID">
                     <div className="flex gap-2">
-                      <Input value={orderForm.booking_id} onChange={e => setOrderForm({...orderForm, booking_id: e.target.value})} placeholder="ZEN00035" required />
+                      <Input value={orderForm.booking_id} onChange={e => setOrderForm({...orderForm, booking_id: e.target.value})} placeholder="Order000035" required />
                       <button type="button" onClick={genBookingId} className="rounded-lg border border-gray-200 px-3 text-xs text-gray-500 hover:bg-gray-50 whitespace-nowrap">Auto</button>
                     </div>
                   </Field>
