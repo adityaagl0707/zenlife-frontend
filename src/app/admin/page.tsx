@@ -1333,10 +1333,19 @@ export default function AdminPage() {
                 {reportStep === "done" && (() => {
                   // ── ZenScore auto-compute ─────────────────────────────────
                   type OrganRow = { organ_name: string; severity: string };
+                  type FindingRow = { id: number; severity: string };
                   const organs = (reportDetail?.organs as OrganRow[] | undefined) ?? [];
+                  const findings = (reportDetail?.findings as FindingRow[] | undefined) ?? [];
                   const criticalOrgans = organs.filter(o => o.severity?.toLowerCase() === "critical");
                   const majorOrgans   = organs.filter(o => o.severity?.toLowerCase() === "major");
                   const minorOrgans   = organs.filter(o => o.severity?.toLowerCase() === "minor");
+                  const normalOrgans  = organs.filter(o => o.severity?.toLowerCase() === "normal");
+                  const findingsBySev = {
+                    critical: findings.filter(f => f.severity?.toLowerCase() === "critical").length,
+                    major:    findings.filter(f => f.severity?.toLowerCase() === "major").length,
+                    minor:    findings.filter(f => f.severity?.toLowerCase() === "minor").length,
+                    normal:   findings.filter(f => f.severity?.toLowerCase() === "normal").length,
+                  };
 
                   const computedScore = Math.max(0, Math.min(100, Math.round(
                     100 - criticalOrgans.length * 15 - majorOrgans.length * 7 - minorOrgans.length * 3
@@ -1467,14 +1476,29 @@ export default function AdminPage() {
                         <div className="flex-1 space-y-1">
                           {organs.length > 0 ? (
                             <>
-                              <p className="text-sm font-bold text-gray-700">Auto-computed from organ scores</p>
+                              <p className="text-sm font-bold text-gray-700">
+                                Auto-computed from {organs.length} organ system{organs.length !== 1 ? "s" : ""}
+                                <span className="ml-2 text-xs font-normal text-gray-400">· {findings.length} parameter{findings.length !== 1 ? "s" : ""} imported</span>
+                              </p>
+                              <p className="text-[11px] font-semibold text-gray-500 mt-2">Organ-system breakdown (drives ZenScore):</p>
                               <div className="flex flex-wrap gap-2 text-[11px]">
                                 {criticalOrgans.length > 0 && <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 font-semibold">{criticalOrgans.length} critical (−{criticalOrgans.length * 15} pts)</span>}
                                 {majorOrgans.length   > 0 && <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 font-semibold">{majorOrgans.length} major (−{majorOrgans.length * 7} pts)</span>}
                                 {minorOrgans.length   > 0 && <span className="rounded-full bg-yellow-100 text-yellow-700 px-2 py-0.5 font-semibold">{minorOrgans.length} minor (−{minorOrgans.length * 3} pts)</span>}
-                                {organs.filter(o => o.severity?.toLowerCase() === "normal").length > 0 && <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 font-semibold">{organs.filter(o => o.severity?.toLowerCase() === "normal").length} normal</span>}
+                                {normalOrgans.length > 0 && <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 font-semibold">{normalOrgans.length} normal</span>}
                               </div>
-                              <p className="text-[11px] text-gray-400">100 − (critical×15) − (major×7) − (minor×3)</p>
+                              {findings.length > 0 && (
+                                <>
+                                  <p className="text-[11px] font-semibold text-gray-500 mt-2">Parameter-level findings:</p>
+                                  <div className="flex flex-wrap gap-2 text-[11px]">
+                                    {findingsBySev.critical > 0 && <span className="rounded-full bg-red-50 text-red-600 px-2 py-0.5 ring-1 ring-red-100">{findingsBySev.critical} critical</span>}
+                                    {findingsBySev.major    > 0 && <span className="rounded-full bg-amber-50 text-amber-600 px-2 py-0.5 ring-1 ring-amber-100">{findingsBySev.major} major</span>}
+                                    {findingsBySev.minor    > 0 && <span className="rounded-full bg-yellow-50 text-yellow-600 px-2 py-0.5 ring-1 ring-yellow-100">{findingsBySev.minor} minor</span>}
+                                    {findingsBySev.normal   > 0 && <span className="rounded-full bg-emerald-50 text-emerald-600 px-2 py-0.5 ring-1 ring-emerald-100">{findingsBySev.normal} normal</span>}
+                                  </div>
+                                </>
+                              )}
+                              <p className="text-[11px] text-gray-400 mt-2">ZenScore = 100 − (critical organs × 15) − (major × 7) − (minor × 3)</p>
                             </>
                           ) : (
                             <>
