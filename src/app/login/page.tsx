@@ -2,23 +2,30 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Leaf, Phone, ShieldCheck, ArrowRight, Loader2, UserPlus, KeyRound, CheckCircle2 } from "lucide-react";
+import { Leaf, Phone, ShieldCheck, ArrowRight, Loader2, UserPlus, KeyRound, CheckCircle2, Lock } from "lucide-react";
 import { api } from "@/lib/api";
 import { setToken } from "@/lib/auth";
 
 type Mode = "signin" | "signup";
-type SignInStep = "phone" | "otp";
+type SignInStep = "phone" | "otp" | "password" | "force_change";
 
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
 
-  // ── Sign In state (OTP) ─────────────────────────────────────────────────
-  const [step, setStep] = useState<SignInStep>("phone");
+  // ── Sign In state ───────────────────────────────────────────────────────
+  const [step, setStep] = useState<SignInStep>("password");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // ── Force change password (first login) ─────────────────────────────────
+  const [newPwd, setNewPwd] = useState("");
+  const [newPwd2, setNewPwd2] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState("");
 
   // ── Sign Up state ───────────────────────────────────────────────────────
   const [su, setSu] = useState({
@@ -65,11 +72,65 @@ export default function LoginPage() {
     try {
       const data = await api.auth.verifyOtp(phone, otp);
       setToken(data.access_token);
-      router.push("/dashboard");
+      if (data.user.must_change_password) {
+        setStep("force_change");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Invalid OTP");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePasswordLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.length !== 10) {
+      setError("Enter a valid 10-digit mobile number");
+      return;
+    }
+    if (!password) {
+      setError("Enter your password");
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await api.auth.login(cleaned, password);
+      setToken(data.access_token);
+      if (data.user.must_change_password) {
+        setStep("force_change");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwdError("");
+    if (newPwd.length < 6) {
+      setPwdError("Password must be at least 6 characters");
+      return;
+    }
+    if (newPwd !== newPwd2) {
+      setPwdError("Passwords do not match");
+      return;
+    }
+    setPwdLoading(true);
+    try {
+      await api.auth.changePassword(newPwd, newPwd2);
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      setPwdError(err instanceof Error ? err.message : "Failed to update password");
+    } finally {
+      setPwdLoading(false);
     }
   }
 
@@ -148,12 +209,24 @@ export default function LoginPage() {
         </p>
         <h1 className="font-display text-[clamp(2rem,5vw,3rem)] leading-none text-zen-900">
           {mode === "signin"
-            ? (step === "phone" ? "Sign in to your logbook." : "Verify your identity.")
+            ? step === "force_change"
+              ? "Set a new password."
+              : step === "otp"
+                ? "Verify your identity."
+                : step === "phone"
+                  ? "Sign in to your logbook."
+                  : "Sign in to your logbook."
             : "Create your ZenLife account."}
         </h1>
         <p className="mt-2 text-[14px] text-gray-400">
           {mode === "signin"
-            ? (step === "phone" ? "Enter your registered mobile number to continue." : `We sent a 6-digit code to +91 ${phone}.`)
+            ? step === "force_change"
+              ? "First-time login — please choose a new password to continue."
+              : step === "otp"
+                ? `We sent a 6-digit code to +91 ${phone}.`
+                : step === "phone"
+                  ? "Enter your registered mobile number to continue."
+                  : "Enter your mobile number and password."
             : "A few details and we'll auto-generate your Zen ID."}
         </p>
       </div>
@@ -169,7 +242,7 @@ export default function LoginPage() {
             {/* Tabs */}
             <div className="flex border-b border-black/5 bg-cream-dark/40">
               <button
-                onClick={() => { setMode("signin"); setStep("phone"); setError(""); setCreatedZenId(null); }}
+                onClick={() => { setMode("signin"); setStep("password"); setError(""); setCreatedZenId(null); }}
                 className={`flex-1 py-3.5 text-[12px] font-bold uppercase tracking-[0.18em] transition-colors ${
                   mode === "signin" ? "bg-white text-zen-900 border-b-2 border-zen-700" : "text-gray-400 hover:text-zen-900"
                 }`}
@@ -191,13 +264,115 @@ export default function LoginPage() {
               {mode === "signin" ? (
                 <>
                   <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-2xl bg-cream-dark">
-                    {step === "phone"
-                      ? <Phone className="h-5 w-5 text-zen-900" />
-                      : <ShieldCheck className="h-5 w-5 text-zen-900" />
+                    {step === "force_change"
+                      ? <Lock className="h-5 w-5 text-zen-900" />
+                      : step === "otp"
+                        ? <ShieldCheck className="h-5 w-5 text-zen-900" />
+                        : <Phone className="h-5 w-5 text-zen-900" />
                     }
                   </div>
 
-                  {step === "phone" ? (
+                  {step === "force_change" ? (
+                    <form onSubmit={handleChangePassword} className="space-y-5">
+                      <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-[12px] text-amber-800">
+                        Your account is using a temporary password. Set a new password to continue.
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">New password</label>
+                        <input
+                          type="password"
+                          value={newPwd}
+                          onChange={(e) => { setNewPwd(e.target.value); setPwdError(""); }}
+                          placeholder="At least 6 characters"
+                          minLength={6}
+                          required
+                          className="w-full rounded-xl border border-black/8 bg-cream px-4 py-3 text-[14px] font-medium text-zen-900 outline-none focus:border-zen-600 focus:ring-2 focus:ring-zen-600/15 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Confirm new password</label>
+                        <input
+                          type="password"
+                          value={newPwd2}
+                          onChange={(e) => { setNewPwd2(e.target.value); setPwdError(""); }}
+                          placeholder="Re-enter password"
+                          minLength={6}
+                          required
+                          className="w-full rounded-xl border border-black/8 bg-cream px-4 py-3 text-[14px] font-medium text-zen-900 outline-none focus:border-zen-600 focus:ring-2 focus:ring-zen-600/15 transition-all"
+                        />
+                      </div>
+                      {pwdError && (
+                        <p className="rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-600">{pwdError}</p>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={pwdLoading}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-zen-900 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-md disabled:opacity-50"
+                      >
+                        {pwdLoading
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <><span>Submit</span><ArrowRight className="h-4 w-4" /></>
+                        }
+                      </button>
+                    </form>
+                  ) : step === "password" ? (
+                    <form onSubmit={handlePasswordLogin} className="space-y-5">
+                      <div>
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Mobile number</label>
+                        <div className="flex overflow-hidden rounded-xl border border-black/8 bg-cream focus-within:border-zen-600 focus-within:ring-2 focus-within:ring-zen-600/15 transition-all">
+                          <span className="flex items-center border-r border-black/8 bg-cream-dark px-4 text-[13px] font-bold text-gray-500">+91</span>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            maxLength={10}
+                            value={phone}
+                            onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setError(""); }}
+                            placeholder="98765 43210"
+                            className="flex-1 bg-cream px-4 py-3.5 text-[14px] font-medium text-zen-900 outline-none placeholder:text-gray-300"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Password</label>
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                          placeholder="Enter your password"
+                          className="w-full rounded-xl border border-black/8 bg-cream px-4 py-3 text-[14px] font-medium text-zen-900 outline-none focus:border-zen-600 focus:ring-2 focus:ring-zen-600/15 transition-all"
+                          required
+                        />
+                        <p className="mt-1.5 text-[11px] text-gray-400">
+                          New patients added by admin: default password is <strong className="text-gray-600">123456</strong>.
+                        </p>
+                      </div>
+
+                      {error && (
+                        <p className="rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-600">{error}</p>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-zen-900 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-md disabled:opacity-50"
+                      >
+                        {loading
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <><span>Sign In</span><ArrowRight className="h-4 w-4" /></>
+                        }
+                      </button>
+
+                      <div className="flex items-center justify-between text-[11px]">
+                        <button type="button" onClick={() => { setStep("phone"); setError(""); }} className="font-semibold text-zen-700 hover:underline">
+                          Sign in with OTP instead
+                        </button>
+                        <button type="button" onClick={() => setMode("signup")} className="font-semibold text-zen-700 hover:underline">
+                          Create an account
+                        </button>
+                      </div>
+                    </form>
+                  ) : step === "phone" ? (
                     <form onSubmit={handleSendOtp} className="space-y-5">
                       <div>
                         <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
@@ -235,16 +410,14 @@ export default function LoginPage() {
                         }
                       </button>
 
-                      <p className="text-center text-[11px] text-gray-400">
-                        New to ZenLife?{" "}
-                        <button
-                          type="button"
-                          onClick={() => setMode("signup")}
-                          className="font-semibold text-zen-700 hover:underline"
-                        >
+                      <div className="flex items-center justify-between text-[11px]">
+                        <button type="button" onClick={() => { setStep("password"); setError(""); }} className="font-semibold text-zen-700 hover:underline">
+                          Sign in with password
+                        </button>
+                        <button type="button" onClick={() => setMode("signup")} className="font-semibold text-zen-700 hover:underline">
                           Create an account
                         </button>
-                      </p>
+                      </div>
                     </form>
                   ) : (
                     <form onSubmit={handleVerifyOtp} className="space-y-5">

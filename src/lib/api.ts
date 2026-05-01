@@ -48,6 +48,11 @@ export const api = {
         "/auth/login",
         { method: "POST", body: JSON.stringify({ phone, password }) }
       ),
+    changePassword: (new_password: string, confirm_password: string) =>
+      request<{ ok: boolean }>(
+        "/auth/change-password",
+        { method: "POST", body: JSON.stringify({ new_password, confirm_password }) }
+      ),
   },
   orders: {
     list: () => request<Order[]>("/orders/"),
@@ -78,6 +83,7 @@ export interface AuthUser {
   zen_id?: string | null;
   age?: number | null;
   gender?: string | null;
+  must_change_password?: boolean;
 }
 
 export interface Order {
