@@ -1,15 +1,16 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Sparkles, Download, CheckCircle2, AlertTriangle, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com";
+const API = (process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com").replace(/\/api\/v1\/?$/, "");
 
 const SEVERITY_COLORS: Record<string, string> = {
   critical: "bg-red-100 text-red-700 border-red-200",
   major:    "bg-orange-100 text-orange-700 border-orange-200",
   minor:    "bg-yellow-100 text-yellow-700 border-yellow-200",
   normal:   "bg-emerald-100 text-emerald-700 border-emerald-200",
+  pending:  "bg-gray-100 text-gray-400 border-gray-200",
 };
 
 const SECTION_META: Record<string, { label: string; icon: string; has_key_findings: boolean }> = {
@@ -47,32 +48,75 @@ function ParamRow({
   onChange: (v: ParamValue) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const sev = val.severity || "normal";
+  const [classifying, setClassifying] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isPending = !val.value?.trim();
+  const sev = isPending ? "pending" : (val.severity || "normal");
+
+  // Auto-classify severity when value changes
+  const autoClassify = useCallback(async (value: string) => {
+    if (!value.trim() || !def.normal) return;
+    setClassifying(true);
+    try {
+      const res = await fetch(`${API}/api/v1/admin/classify-value`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value, normal_range: def.normal }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.severity) onChange({ ...val, value, severity: data.severity });
+      }
+    } catch { /* silent fail — user can set manually */ }
+    finally { setClassifying(false); }
+  }, [def.normal, val, onChange]);
+
+  function handleValueChange(newValue: string) {
+    onChange({ ...val, value: newValue });
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (newValue.trim()) {
+      debounceRef.current = setTimeout(() => autoClassify(newValue), 600);
+    }
+  }
+
+  const borderColor = sev === "critical" ? "border-red-200" : sev === "major" ? "border-orange-200" : sev === "minor" ? "border-yellow-200" : "border-gray-100";
 
   return (
-    <div className={cn("rounded-xl border mb-2 overflow-hidden", sev === "critical" ? "border-red-200" : sev === "major" ? "border-orange-200" : sev === "minor" ? "border-yellow-200" : "border-gray-100")}>
+    <div className={cn("rounded-xl border mb-2 overflow-hidden", borderColor)}>
       {/* Header row */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-white">
+      <div className={cn("flex items-center gap-3 px-4 py-3", isPending ? "bg-gray-50" : "bg-white")}>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-800 truncate">{def.name}</p>
+          <p className={cn("text-sm font-semibold truncate", isPending ? "text-gray-400" : "text-gray-800")}>{def.name}</p>
           <p className="text-xs text-gray-400">{def.unit ? `Unit: ${def.unit}` : ""}{def.normal ? ` · Normal: ${def.normal}` : ""}</p>
         </div>
         <input
           type="text"
           value={val.value || ""}
-          onChange={(e) => onChange({ ...val, value: e.target.value })}
+          onChange={(e) => handleValueChange(e.target.value)}
           placeholder="Value"
           className="w-28 rounded-lg border border-gray-200 px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-zen-500"
         />
-        <select
-          value={sev}
-          onChange={(e) => onChange({ ...val, severity: e.target.value })}
-          className={cn("rounded-lg border px-2 py-1.5 text-xs font-semibold focus:outline-none cursor-pointer", SEVERITY_COLORS[sev] || SEVERITY_COLORS.normal)}
-        >
-          {["normal", "minor", "major", "critical"].map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+        {isPending ? (
+          <span className="rounded-lg border border-gray-200 bg-gray-100 px-2 py-1.5 text-xs font-semibold text-gray-400 w-[90px] text-center">
+            ⏳ pending
+          </span>
+        ) : classifying ? (
+          <span className="flex items-center justify-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-semibold text-gray-400 w-[90px]">
+            <Loader2 className="h-3 w-3 animate-spin" /> AI…
+          </span>
+        ) : (
+          <select
+            value={val.severity || "normal"}
+            onChange={(e) => onChange({ ...val, severity: e.target.value })}
+            className={cn("rounded-lg border px-2 py-1.5 text-xs font-semibold focus:outline-none cursor-pointer", SEVERITY_COLORS[val.severity || "normal"] || SEVERITY_COLORS.normal)}
+            title="AI-classified · click to override"
+          >
+            {["normal", "minor", "major", "critical"].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        )}
         <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-600">
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
@@ -139,14 +183,17 @@ function SectionPanel({
   const [search, setSearch] = useState("");
 
   const filteredDefs = defs.filter((d) => {
-    const matchSev = filterSev === "all" || (params[d.name]?.severity || "normal") === filterSev;
+    const hasValue = !!(params[d.name]?.value?.trim());
+    const effectiveSev = hasValue ? (params[d.name]?.severity || "normal") : "pending";
+    const matchSev = filterSev === "all" || effectiveSev === filterSev;
     const matchSearch = d.name.toLowerCase().includes(search.toLowerCase());
     return matchSev && matchSearch;
   });
 
-  // Counts per severity
+  // Counts per severity — only count parameters that have a value (skip pending)
   const counts = { critical: 0, major: 0, minor: 0, normal: 0 };
   for (const d of defs) {
+    if (!params[d.name]?.value?.trim()) continue; // pending — exclude from C/M/m/N counts
     const s = (params[d.name]?.severity || "normal") as keyof typeof counts;
     counts[s] = (counts[s] || 0) + 1;
   }
@@ -269,12 +316,15 @@ function SectionPanel({
             <p className="text-sm font-semibold text-gray-700">
               Parameters — {filledCount}/{defs.length} filled
             </p>
-            <div className="flex gap-3 mt-1 text-xs">
+            <div className="flex gap-3 mt-1 text-xs flex-wrap">
               {(["critical", "major", "minor", "normal"] as const).map((s) => (
                 <span key={s} className={cn("font-semibold", { critical: "text-red-600", major: "text-orange-600", minor: "text-yellow-600", normal: "text-emerald-600" }[s])}>
                   {s.charAt(0).toUpperCase()}: {counts[s]}
                 </span>
               ))}
+              <span className="font-semibold text-gray-400">
+                ⏳ {defs.length - filledCount} pending
+              </span>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -285,7 +335,7 @@ function SectionPanel({
               placeholder="Search parameter…"
               className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zen-500"
             />
-            {["all", "critical", "major", "minor", "normal"].map((s) => (
+            {["all", "critical", "major", "minor", "normal", "pending"].map((s) => (
               <button
                 key={s}
                 onClick={() => setFilterSev(s)}
