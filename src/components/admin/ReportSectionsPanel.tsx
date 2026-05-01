@@ -317,14 +317,19 @@ function SectionPanel({
               Parameters — {filledCount}/{defs.length} filled
             </p>
             <div className="flex gap-3 mt-1 text-xs flex-wrap">
-              {(["critical", "major", "minor", "normal"] as const).map((s) => (
-                <span key={s} className={cn("font-semibold", { critical: "text-red-600", major: "text-orange-600", minor: "text-yellow-600", normal: "text-emerald-600" }[s])}>
-                  {s.charAt(0).toUpperCase()}: {counts[s]}
+              {(["critical", "major", "minor", "normal"] as const).map((s) =>
+                counts[s] > 0 ? (
+                  <span key={s} className={cn("font-semibold", { critical: "text-red-600", major: "text-orange-600", minor: "text-yellow-600", normal: "text-emerald-600" }[s])}>
+                    {s.charAt(0).toUpperCase()}: {counts[s]}
+                  </span>
+                ) : null
+              )}
+              {defs.length - filledCount > 0 && (
+                <span className="font-semibold text-gray-400">
+                  ⏳ {defs.length - filledCount} pending
                 </span>
-              ))}
-              <span className="font-semibold text-gray-400">
-                ⏳ {defs.length - filledCount} pending
-              </span>
+              )}
+              {filledCount === 0 && <span className="text-gray-400 italic">No values entered yet</span>}
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
