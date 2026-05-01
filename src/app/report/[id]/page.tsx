@@ -654,8 +654,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
         {/* ── Key stats ───────────────────────────────────────────────── */}
         <section>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatChip icon={Shield} label="ZenCoverage" value={`${report.coverage_index ?? 0}%`} sub="body scanned" accent="emerald" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <StatChip icon={Activity} label="Total Findings" value={totalFindings} sub={`${organs.length} organ systems`} />
             <StatChip icon={AlertTriangle} label="Critical" value={critical} sub={critical > 0 ? "needs attention" : "none found"} accent={critical > 0 ? "red" : undefined} />
             <StatChip icon={Target} label="Priorities" value={priorities.length} sub="personalised actions" />
