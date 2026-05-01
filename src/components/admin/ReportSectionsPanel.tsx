@@ -343,7 +343,7 @@ function SectionPanel({
         {(sectionType === "blood" || sectionType === "urine") ? (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 flex flex-col">
             <p className="text-sm font-semibold text-gray-700 mb-1">Option 2 · Excel template</p>
-            <p className="text-xs text-gray-500 mb-3">Download the template, fill in values offline, then upload to import. Covers blood &amp; urine markers.</p>
+            <p className="text-xs text-gray-500 mb-3">Download the section-specific template, fill in values offline, then upload to import.</p>
             <input
               ref={templateFileRef}
               type="file"
