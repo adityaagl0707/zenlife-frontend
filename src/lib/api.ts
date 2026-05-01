@@ -26,9 +26,27 @@ export const api = {
   auth: {
     sendOtp: (phone: string) => request("/auth/send-otp", { method: "POST", body: JSON.stringify({ phone }) }),
     verifyOtp: (phone: string, otp: string) =>
-      request<{ access_token: string; user: { id: number; phone: string; name: string } }>(
+      request<{ access_token: string; user: AuthUser }>(
         "/auth/verify-otp",
         { method: "POST", body: JSON.stringify({ phone, otp }) }
+      ),
+    signup: (payload: {
+      phone: string;
+      first_name: string;
+      last_name: string;
+      age: number;
+      gender: string;
+      password: string;
+      confirm_password: string;
+    }) =>
+      request<{ access_token: string; user: AuthUser }>(
+        "/auth/signup",
+        { method: "POST", body: JSON.stringify(payload) }
+      ),
+    login: (phone: string, password: string) =>
+      request<{ access_token: string; user: AuthUser }>(
+        "/auth/login",
+        { method: "POST", body: JSON.stringify({ phone, password }) }
       ),
   },
   orders: {
@@ -53,6 +71,15 @@ export const api = {
 };
 
 // Types
+export interface AuthUser {
+  id: number;
+  phone: string;
+  name: string | null;
+  zen_id?: string | null;
+  age?: number | null;
+  gender?: string | null;
+}
+
 export interface Order {
   id: number;
   booking_id: string;

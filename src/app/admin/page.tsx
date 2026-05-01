@@ -974,7 +974,32 @@ function BodyAgeSection({ reportId }: { reportId: number }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────
 
-type Patient = { id: number; name: string; phone: string; age: number; gender: string; orders: { id: number; booking_id: string; status: string; has_report: boolean; report_id: number | null; is_published: boolean }[] };
+type PatientStatus = "registered_unpaid" | "paid_test_pending" | "test_done_report_awaited" | "report_published";
+type Patient = {
+  id: number;
+  name: string;
+  phone: string;
+  age: number;
+  gender: string;
+  zen_id?: string | null;
+  status: PatientStatus;
+  orders: { id: number; booking_id: string; status: string; has_report: boolean; report_id: number | null; is_published: boolean; tests_complete: boolean }[];
+};
+
+const STATUS_TABS: { key: PatientStatus | "all"; label: string; color: string }[] = [
+  { key: "all", label: "All", color: "bg-gray-100 text-gray-800" },
+  { key: "registered_unpaid", label: "Registered · Not Paid", color: "bg-slate-100 text-slate-800" },
+  { key: "paid_test_pending", label: "Paid · Test Pending", color: "bg-amber-100 text-amber-800" },
+  { key: "test_done_report_awaited", label: "Test Done · Report Awaited", color: "bg-blue-100 text-blue-800" },
+  { key: "report_published", label: "Report Published", color: "bg-emerald-100 text-emerald-800" },
+];
+
+const STATUS_BADGE: Record<PatientStatus, { label: string; cls: string }> = {
+  registered_unpaid: { label: "Registered · Not Paid", cls: "bg-slate-100 text-slate-700" },
+  paid_test_pending: { label: "Paid · Test Pending", cls: "bg-amber-100 text-amber-700" },
+  test_done_report_awaited: { label: "Test Done · Report Awaited", cls: "bg-blue-100 text-blue-700" },
+  report_published: { label: "Report Published", cls: "bg-emerald-100 text-emerald-700" },
+};
 
 function SyncAllOrgansButton() {
   const [syncing, setSyncing] = useState(false);
@@ -1006,6 +1031,7 @@ function SyncAllOrgansButton() {
 
 export default function AdminPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [statusFilter, setStatusFilter] = useState<PatientStatus | "all">("all");
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "new-patient" | "patient">("list");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -1097,21 +1123,66 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Status filter tabs */}
+            {!loading && patients.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {STATUS_TABS.map(tab => {
+                  const count = tab.key === "all"
+                    ? patients.length
+                    : patients.filter(p => p.status === tab.key).length;
+                  const active = statusFilter === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setStatusFilter(tab.key)}
+                      className={cn(
+                        "rounded-full border px-4 py-1.5 text-xs font-bold transition-colors flex items-center gap-2",
+                        active
+                          ? "border-zen-900 bg-zen-900 text-white"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-zen-700 hover:text-zen-900"
+                      )}
+                    >
+                      <span>{tab.label}</span>
+                      <span className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                        active ? "bg-white/20 text-white" : tab.color
+                      )}>{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {loading ? (
               <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-zen-600" /></div>
             ) : patients.length === 0 ? (
               <p className="text-center text-gray-400 py-10">No patients yet. Add one above.</p>
-            ) : (
+            ) : (() => {
+              const filtered = statusFilter === "all" ? patients : patients.filter(p => p.status === statusFilter);
+              if (filtered.length === 0) {
+                return <p className="text-center text-gray-400 py-10">No patients in this status.</p>;
+              }
+              return (
               <div className="space-y-3">
-                {patients.map(p => (
+                {filtered.map(p => (
                   <div key={p.id} className="card flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-zen-800 text-white font-bold">
-                        {p.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+                        {(p.name || "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900">{p.name}</p>
-                        <p className="text-sm text-gray-500">{p.phone} · {p.age} yrs · {p.gender}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-bold text-gray-900">{p.name || "(no name)"}</p>
+                          {p.zen_id && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-zen-700 bg-zen-50 rounded-full px-2 py-0.5">
+                              {p.zen_id}
+                            </span>
+                          )}
+                          <span className={cn("text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5", STATUS_BADGE[p.status].cls)}>
+                            {STATUS_BADGE[p.status].label}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">{p.phone}{p.age ? ` · ${p.age} yrs` : ""}{p.gender ? ` · ${p.gender}` : ""}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {p.orders.length} order{p.orders.length !== 1 ? "s" : ""} ·{" "}
                           {p.orders.filter(o => o.has_report).length} report{p.orders.filter(o => o.has_report).length !== 1 ? "s" : ""}
@@ -1148,7 +1219,8 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
