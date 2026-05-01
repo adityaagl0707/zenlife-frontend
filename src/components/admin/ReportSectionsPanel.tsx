@@ -334,10 +334,10 @@ function SectionPanel({
         </div>
 
         {/* Option 2: Template */}
-        {sectionType === "blood" ? (
+        {(sectionType === "blood" || sectionType === "urine") ? (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 flex flex-col">
             <p className="text-sm font-semibold text-gray-700 mb-1">Option 2 · Excel template</p>
-            <p className="text-xs text-gray-500 mb-3">Download the template, fill in values offline, then upload to import.</p>
+            <p className="text-xs text-gray-500 mb-3">Download the template, fill in values offline, then upload to import. Covers blood &amp; urine markers.</p>
             <input
               ref={templateFileRef}
               type="file"
@@ -370,7 +370,7 @@ function SectionPanel({
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-5 flex flex-col items-center justify-center text-center">
-            <p className="text-xs text-gray-400">Excel template available for Blood Report only.</p>
+            <p className="text-xs text-gray-400">Excel template available for Blood Report and Urine Analysis only.</p>
             <p className="text-[11px] text-gray-300 mt-1">Use Option 1, or fill values manually below.</p>
           </div>
         )}
