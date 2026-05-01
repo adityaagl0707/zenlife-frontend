@@ -45,19 +45,25 @@ function formatDateShort(d: string | null) {
   };
 }
 
-// ── Status pill ─────────────────────────────────────────────────────────────
+// ── Status pill (3-stage journey) ───────────────────────────────────────────
 
-const STATUS_CONFIG = {
-  completed: { label: "Completed", bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400" },
-  scheduled: { label: "Scheduled", bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-400" },
-  pending:   { label: "Pending",   bg: "bg-amber-50", text: "text-amber-700",  dot: "bg-amber-400" },
+function getOrderStage(order: Order): "billing_done" | "test_complete" | "published" {
+  if (order.is_published) return "published";
+  if (order.status === "completed") return "test_complete";
+  return "billing_done";
+}
+
+const STAGE_CONFIG = {
+  billing_done:  { label: "Billing Done · Test Pending",     bg: "bg-blue-50",    text: "text-blue-700",    dot: "bg-blue-400" },
+  test_complete: { label: "Test Complete · Report Pending",  bg: "bg-amber-50",   text: "text-amber-700",   dot: "bg-amber-400" },
+  published:     { label: "Report Published",                bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400" },
 };
 
-function StatusPill({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending;
+function StatusPill({ order }: { order: Order }) {
+  const cfg = STAGE_CONFIG[getOrderStage(order)];
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold", cfg.bg, cfg.text)}>
-      <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
+      <span className={cn("h-1.5 w-1.5 rounded-full animate-pulse", cfg.dot)} />
       {cfg.label}
     </span>
   );
@@ -105,7 +111,7 @@ function ScanEntry({ order, isLatest }: { order: Order; isLatest: boolean }) {
                   Latest
                 </span>
               )}
-              <StatusPill status={order.status} />
+              <StatusPill order={order} />
             </div>
             <h3 className="mt-2 font-display text-[1.2rem] leading-tight text-zen-900">
               {order.patient_name}
@@ -125,9 +131,9 @@ function ScanEntry({ order, isLatest }: { order: Order; isLatest: boolean }) {
           </div>
         </div>
 
-        {/* Action strip */}
+        {/* Action strip — only enable Open ZenReport when published */}
         <div className="mt-4 flex items-center gap-2 border-t border-gray-50 pt-3">
-          {order.has_report && order.report_id ? (
+          {order.is_published && order.report_id ? (
             <>
               <Link
                 href={`/report/${order.report_id}`}
@@ -152,10 +158,21 @@ function ScanEntry({ order, isLatest }: { order: Order; isLatest: boolean }) {
               </Link>
             </>
           ) : (
-            <div className="flex items-center gap-1.5 text-[12px] text-gray-400">
+            <button
+              disabled
+              className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-4 py-2 text-[12px] font-bold text-amber-700 cursor-not-allowed"
+              title={order.status === "completed" ? "Your report is being prepared" : "Awaiting your scan"}
+            >
               <Clock className="h-3.5 w-3.5" />
-              Report ready in 5–7 business days
-            </div>
+              In Progress
+            </button>
+          )}
+          {!(order.is_published && order.report_id) && (
+            <span className="text-[11px] text-gray-400 italic">
+              {order.status === "completed"
+                ? "Report being prepared by ZenLife team"
+                : "Available after your scan is complete"}
+            </span>
           )}
         </div>
       </div>
@@ -396,14 +413,6 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              {/* Book another */}
-              <Link
-                href="/book"
-                className="mt-6 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zen-200 py-5 text-[13px] font-semibold text-zen-700 hover:border-zen-400 hover:bg-zen-50 transition-all"
-              >
-                <Plus className="h-4 w-4" />
-                Add another scan
-              </Link>
             </div>
 
             {/* ── Right: contextual actions ────────────────────────────── */}

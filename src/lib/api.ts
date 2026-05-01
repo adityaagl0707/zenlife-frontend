@@ -65,6 +65,7 @@ export interface Order {
   amount: number;
   has_report: boolean;
   report_id: number | null;
+  is_published: boolean;
 }
 
 export interface Report {
