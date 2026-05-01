@@ -5,7 +5,8 @@ import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload
 import { cn } from "@/lib/utils";
 import ReportSectionsPanel from "@/components/admin/ReportSectionsPanel";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com";
+const BASE = `${API_URL}/api/v1`;
 
 async function api(path: string, method = "GET", body?: unknown) {
   const res = await fetch(`${BASE}${path}`, {
@@ -1011,7 +1012,7 @@ export default function AdminPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [reportDetail, setReportDetail] = useState<Record<string, unknown> | null>(null);
-  const [reportStep, setReportStep] = useState<"report" | "organs" | "labs" | "scans" | "report-data" | "priorities" | "body-age" | "done">("report");
+  const [reportStep, setReportStep] = useState<"report" | "data" | "priorities" | "done">("data");
 
   // New patient form
   const [patientForm, setPatientForm] = useState({ phone: "", name: "", age: "", gender: "Male" });
@@ -1053,7 +1054,7 @@ export default function AdminPage() {
         next_visit: reportForm.next_visit || "",
       });
       setSelectedReportId(report.id);
-      setReportStep("organs");
+      setReportStep("data");
       loadPatients();
       setView("patient");
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); }
@@ -1083,7 +1084,6 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-extrabold text-gray-900">Patients</h2>
               <div className="flex items-center gap-2">
-                <SyncAllOrgansButton />
                 <button onClick={() => { setView("new-patient"); genBookingId(); }} className="btn-primary py-2 text-sm flex items-center gap-2">
                   <Plus className="h-4 w-4" /> Add Patient
                 </button>
@@ -1123,7 +1123,7 @@ export default function AdminPage() {
                       <button
                         onClick={() => {
                           setSelectedPatient(p);
-                          if (p.orders[0]?.report_id) { setSelectedReportId(p.orders[0].report_id); setReportStep("organs"); }
+                          if (p.orders[0]?.report_id) { setSelectedReportId(p.orders[0].report_id); setReportStep("data"); }
                           else { setSelectedOrderId(p.orders[0]?.id ?? null); setReportStep("report"); }
                           setView("patient");
                         }}
@@ -1243,13 +1243,9 @@ export default function AdminPage() {
             {/* Step tabs */}
             <div className="flex gap-2 overflow-x-auto pb-1">
               {([
-                { id: "organs", label: "🫀 Organs" },
-                { id: "labs", label: "🧪 Lab Results" },
-                { id: "scans", label: "🩻 Scans" },
-                { id: "report-data", label: "📋 Report Data" },
+                { id: "data",       label: "📋 Enter Report Data" },
                 { id: "priorities", label: "⭐ Priorities" },
-                { id: "body-age", label: "🧬 Body Age" },
-                { id: "done", label: "✓ Done" },
+                { id: "done",       label: "✓ Done" },
               ] as const).map(({ id, label }) => (
                 <button key={id} onClick={() => setReportStep(id)}
                   className={cn("flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
@@ -1263,24 +1259,11 @@ export default function AdminPage() {
             {reportDetail && (
               <div className="space-y-4">
 
-                {reportStep === "organs" && (
-                  <OrganSyncSection
+                {reportStep === "data" && (
+                  <ReportSectionsPanel
                     reportId={selectedReportId}
-                    organs={(reportDetail.organs as Array<{id: number; icon: string; organ_name: string; severity: string; risk_label: string; critical_count: number; major_count: number; minor_count: number; normal_count: number}>) ?? []}
-                    onSynced={() => loadReportDetail(selectedReportId!)}
+                    onSaved={() => loadReportDetail(selectedReportId!)}
                   />
-                )}
-
-                {reportStep === "labs" && (
-                  <LabResultsSection reportId={selectedReportId} onImported={() => loadReportDetail(selectedReportId!)} />
-                )}
-
-                {reportStep === "scans" && (
-                  <ScanFindingsSection reportId={selectedReportId} onImported={() => loadReportDetail(selectedReportId!)} />
-                )}
-
-                {reportStep === "report-data" && (
-                  <ReportSectionsPanel reportId={selectedReportId} />
                 )}
 
                 {reportStep === "priorities" && (
@@ -1289,10 +1272,6 @@ export default function AdminPage() {
                     priorities={(reportDetail.priorities as Array<{id: number; priority_order: number; title: string}>) ?? []}
                     onChanged={() => loadReportDetail(selectedReportId!)}
                   />
-                )}
-
-                {reportStep === "body-age" && (
-                  <BodyAgeSection reportId={selectedReportId} />
                 )}
 
                 {reportStep === "done" && (

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { Upload, Sparkles, Save, Download, CheckCircle2, AlertTriangle, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Upload, Sparkles, Download, CheckCircle2, AlertTriangle, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com";
@@ -134,7 +134,6 @@ function SectionPanel({
   const [defs, setDefs] = useState<ParamDef[]>(initialData?.param_definitions || []);
   const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [msg, setMsg] = useState("");
   const [filterSev, setFilterSev] = useState("all");
   const [search, setSearch] = useState("");
@@ -185,46 +184,28 @@ function SectionPanel({
     }
   }
 
-  async function handleSave() {
+  async function handleSaveAndApply() {
     setSaving(true);
-    setMsg("");
+    setMsg("Saving data…");
     try {
-      const res = await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}`, {
+      const saveRes = await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key_findings: keyFindings, parameters: params }),
       });
-      if (!res.ok) throw new Error("Save failed");
-      setMsg("✓ Saved successfully.");
+      if (!saveRes.ok) throw new Error("Save failed");
+      setMsg("Applying to report…");
+      const importRes = await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}/import-findings`, {
+        method: "POST",
+      });
+      if (!importRes.ok) throw new Error("Apply failed");
+      const importData = await importRes.json();
+      setMsg(`✓ Saved & applied. ${importData.imported} new findings added. Organ scores syncing in background.`);
       onSaved();
     } catch (e: unknown) {
       setMsg(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleImport() {
-    setImporting(true);
-    setMsg("");
-    try {
-      // Save first
-      await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key_findings: keyFindings, parameters: params }),
-      });
-      // Then import
-      const res = await fetch(`${API}/api/v1/admin/reports/${reportId}/sections/${sectionType}/import-findings`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      setMsg(`✓ Imported ${data.imported} findings to report.`);
-      onSaved();
-    } catch (e: unknown) {
-      setMsg(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
-    } finally {
-      setImporting(false);
     }
   }
 
@@ -341,29 +322,22 @@ function SectionPanel({
           {msg}
         </div>
       )}
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex flex-wrap items-center gap-3">
         <button
-          onClick={handleSave}
+          onClick={handleSaveAndApply}
           disabled={saving}
           className="flex items-center gap-2 rounded-xl bg-zen-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zen-700 disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save {meta.label}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+          {saving ? msg : `Save & Apply ${meta.label}`}
         </button>
-        <button
-          onClick={handleImport}
-          disabled={importing}
-          className="flex items-center gap-2 rounded-xl border border-zen-800 px-5 py-2.5 text-sm font-semibold text-zen-800 hover:bg-zen-50 disabled:opacity-50"
-        >
-          {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-          Import to Report Findings
-        </button>
+        <p className="text-xs text-gray-400">Saves data and immediately updates the report. Organ scores auto-sync.</p>
       </div>
     </div>
   );
 }
 
-export default function ReportSectionsPanel({ reportId }: { reportId: number }) {
+export default function ReportSectionsPanel({ reportId, onSaved: externalOnSaved }: { reportId: number; onSaved?: () => void }) {
   const [activeSection, setActiveSection] = useState("blood");
   const [allSections, setAllSections] = useState<Record<string, SectionData>>({});
   const [loading, setLoading] = useState(true);
@@ -389,6 +363,7 @@ export default function ReportSectionsPanel({ reportId }: { reportId: number }) 
         };
       }
       setAllSections(merged);
+      externalOnSaved?.();
     } catch {
       setError("Failed to load report sections.");
     } finally {
