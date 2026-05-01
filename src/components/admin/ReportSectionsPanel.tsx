@@ -357,7 +357,7 @@ function SectionPanel({
             />
             <div className="mt-auto flex flex-wrap gap-2">
               <a
-                href={`${API}/api/v1/admin/lab-template?report_id=${reportId}`}
+                href={`${API}/api/v1/admin/lab-template?report_id=${reportId}&section=${sectionType}`}
                 download
                 className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
