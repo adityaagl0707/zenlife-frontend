@@ -1042,7 +1042,7 @@ export default function AdminPage() {
 
   // New patient form
   const [patientForm, setPatientForm] = useState({ phone: "", name: "", age: "", gender: "Male" });
-  const [orderForm, setOrderForm] = useState({ booking_id: "", scan_date: "", amount: "27500", scan_type: "ZenScan", status: "completed" });
+  const [orderForm, setOrderForm] = useState({ booking_id: "", scan_date: "", amount: "", scan_type: "ZenScan", status: "completed" });
   const [reportForm, setReportForm] = useState({ report_date: "", next_visit: "" });
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
@@ -1073,10 +1073,15 @@ export default function AdminPage() {
   async function handleCreatePatient(e: React.FormEvent) {
     e.preventDefault(); setSaving(true); setErr("");
     try {
-      const user = await api("/admin/patients", "POST", { ...patientForm, age: parseInt(patientForm.age) });
+      const user = await api("/admin/patients", "POST", {
+        phone: patientForm.phone || null,
+        name: patientForm.name || null,
+        age: patientForm.age ? parseInt(patientForm.age) : null,
+        gender: patientForm.gender || null,
+      });
       const order = await api(`/admin/patients/${user.id}/orders`, "POST", {
         ...orderForm,
-        amount: parseFloat(orderForm.amount),
+        amount: orderForm.amount ? parseFloat(orderForm.amount) : 0,
         scan_date: orderForm.scan_date || new Date().toISOString().split("T")[0],
       });
       const report = await api(`/admin/orders/${order.id}/report`, "POST", {
@@ -1238,13 +1243,13 @@ export default function AdminPage() {
                 <p className="text-sm font-bold text-gray-700 border-b pb-2">Patient Information</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Full Name">
-                    <Input value={patientForm.name} onChange={e => setPatientForm({...patientForm, name: e.target.value})} placeholder="Arjun Mehta" required />
+                    <Input value={patientForm.name} onChange={e => setPatientForm({...patientForm, name: e.target.value})} />
                   </Field>
                   <Field label="Phone Number">
-                    <Input value={patientForm.phone} onChange={e => setPatientForm({...patientForm, phone: e.target.value})} placeholder="9876543210" required maxLength={10} />
+                    <Input value={patientForm.phone} onChange={e => setPatientForm({...patientForm, phone: e.target.value})} maxLength={10} />
                   </Field>
                   <Field label="Age">
-                    <Input type="number" value={patientForm.age} onChange={e => setPatientForm({...patientForm, age: e.target.value})} placeholder="35" min={1} max={120} required />
+                    <Input type="number" value={patientForm.age} onChange={e => setPatientForm({...patientForm, age: e.target.value})} min={1} max={120} />
                   </Field>
                   <Field label="Gender">
                     <Select value={patientForm.gender} onChange={e => setPatientForm({...patientForm, gender: e.target.value})}>
