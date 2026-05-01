@@ -651,8 +651,32 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
       ? Object.values(data.parameters).filter((v) => (v as ParamValue).value && (v as ParamValue).value !== "Not Found").length
       : 0;
   }
+  const grandFilled = visibleSections.reduce((s, st) => s + sectionFillCounts[st], 0);
+  const grandTotal = visibleSections.reduce((s, st) => s + (allSections[st]?.param_definitions?.length || 0), 0);
+  const grandPct = grandTotal > 0 ? Math.round((grandFilled / grandTotal) * 100) : 0;
 
   return (
+    <div className="space-y-4">
+      {/* Overall progress strip */}
+      <div className="rounded-2xl border border-gray-100 bg-white px-5 py-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Overall progress</p>
+            <p className="mt-1 text-[15px] font-bold text-gray-900">
+              {grandFilled} <span className="text-gray-400 font-normal">/</span> {grandTotal}
+              <span className="ml-2 text-xs font-semibold text-gray-500">parameters filled across {visibleSections.length} sections</span>
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[24px] font-extrabold text-zen-800 leading-none">{grandPct}%</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mt-0.5">complete</p>
+          </div>
+        </div>
+        <div className="mt-3 h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-zen-400 via-zen-600 to-zen-900 transition-all" style={{ width: `${grandPct}%` }} />
+        </div>
+      </div>
+
     <div className="flex gap-0 min-h-[600px]">
       {/* Left sidebar: section tabs */}
       <div className="w-48 flex-shrink-0 border-r border-gray-100 pr-3 space-y-1">
@@ -701,6 +725,7 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
           onSaved={loadAll}
         />
       </div>
+    </div>
     </div>
   );
 }
