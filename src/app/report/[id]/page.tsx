@@ -282,27 +282,37 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const [panelOpen, setPanelOpen] = useState(false);
   const [stickyNav, setStickyNav] = useState(false);
   const [bodyAge, setBodyAge] = useState<BodyAge | null>(null);
+  const [adminPublishing, setAdminPublishing] = useState(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const reportId = parseInt(id);
+
+  // Detect admin preview mode (?admin=1)
+  const isAdminPreview = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("admin") === "1"
+    : false;
 
   useEffect(() => {
     if (!isLoggedIn()) { router.push("/login"); return; }
     if (isNaN(reportId)) { setError("Invalid report ID"); setLoading(false); return; }
 
-    Promise.all([
-      api.reports.get(reportId),
-      api.reports.organScores(reportId),
-      api.reports.findings(reportId),
-      api.reports.priorities(reportId),
-      api.reports.bodyAge(reportId).catch(() => null),
-    ])
-      .then(([r, o, f, p, ba]) => {
+    const adminMode = new URLSearchParams(window.location.search).get("admin") === "1";
+
+    api.reports.get(reportId)
+      .then(r => {
         setReport(r);
-        setOrgans(o);
-        setFindings(f);
-        setPriorities(p);
-        setBodyAge(ba);
+        if (!r.is_published && !adminMode) { setLoading(false); return; } // show In Progress (skip for admin preview)
+        return Promise.all([
+          api.reports.organScores(reportId),
+          api.reports.findings(reportId),
+          api.reports.priorities(reportId),
+          api.reports.bodyAge(reportId).catch(() => null),
+        ]).then(([o, f, p, ba]) => {
+          setOrgans(o);
+          setFindings(f);
+          setPriorities(p);
+          setBodyAge(ba);
+        });
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -357,15 +367,101 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     );
   }
 
-  const { critical, major, minor, normal } = report.finding_counts;
+  // ── In Progress (not yet published — skip in admin preview mode) ─────────
+  if (!report.is_published && !isAdminPreview) {
+    return (
+      <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 gap-6">
+        <div className="bg-white rounded-3xl shadow-lg ring-1 ring-black/5 p-10 max-w-md w-full text-center space-y-5">
+          <div className="mx-auto h-20 w-20 rounded-full bg-amber-50 flex items-center justify-center">
+            <Loader2 className="h-9 w-9 text-amber-400 animate-spin" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-500 mb-1">Report Status</p>
+            <h2 className="text-2xl font-extrabold text-gray-900">In Progress</h2>
+            <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+              Hi {report.patient_name?.split(" ")[0]}, your ZenLife report is currently being prepared by our team.
+              You will be notified once it's ready.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-amber-50 border border-amber-100 px-5 py-4 text-left space-y-1">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-amber-500">Booking ID</p>
+            <p className="text-base font-bold text-gray-800">{report.booking_id}</p>
+          </div>
+          <div className="space-y-2 text-[12px] text-gray-400">
+            <p>✓ Your health data is being analysed</p>
+            <p>✓ AI insights are being generated</p>
+            <p>⏳ Final review by ZenLife team</p>
+          </div>
+          <Link href="/dashboard" className="inline-block rounded-full bg-zen-900 px-8 py-3 text-[13px] font-bold text-white hover:bg-zen-800">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const { critical = 0, major = 0, minor = 0, normal = 0 } = report.finding_counts ?? {};
   const totalFindings = critical + major + minor + normal;
   const overallSev = report.overall_severity?.toLowerCase() ?? "normal";
 
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  const formatDate = (d?: string) =>
+    d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "—";
+
+  // Admin publish helper
+  async function adminPublish(publish: boolean) {
+    setAdminPublishing(true);
+    try {
+      const BASE = (process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com").replace(/\/api\/v1\/?$/, "");
+      await fetch(`${BASE}/api/v1/admin/reports/${reportId}/${publish ? "publish" : "unpublish"}`, { method: "POST" });
+      // Reload report to reflect new published state
+      const r = await api.reports.get(reportId);
+      setReport(r);
+    } finally { setAdminPublishing(false); }
+  }
 
   return (
     <div className="min-h-screen bg-cream">
+
+      {/* ── Admin preview bar ───────────────────────────────────────────── */}
+      {isAdminPreview && (
+        <div className={cn(
+          "fixed inset-x-0 bottom-0 z-[60] border-t px-6 py-3 flex items-center justify-between gap-4",
+          report.is_published ? "bg-emerald-900 border-emerald-700" : "bg-zen-900 border-zen-700"
+        )}>
+          <div className="flex items-center gap-3">
+            <span className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider", report.is_published ? "bg-emerald-700 text-emerald-100" : "bg-amber-500 text-white")}>
+              {report.is_published ? "Published" : "Draft"}
+            </span>
+            <p className="text-sm font-semibold text-white">
+              {report.is_published
+                ? "This report is live — patient can view it."
+                : "Admin Preview — patient cannot see this yet."}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/admin" className="text-xs text-white/60 hover:text-white">← Back to Admin</Link>
+            {!report.is_published ? (
+              <button
+                onClick={() => adminPublish(true)}
+                disabled={adminPublishing}
+                className="flex items-center gap-2 rounded-full bg-emerald-500 hover:bg-emerald-400 px-5 py-2 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {adminPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Publish Report
+              </button>
+            ) : (
+              <button
+                onClick={() => adminPublish(false)}
+                disabled={adminPublishing}
+                className="rounded-full border border-white/30 px-5 py-2 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60"
+              >
+                {adminPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Unpublish
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Top bar ────────────────────────────────────────────────────── */}
       <header className="fixed inset-x-0 top-0 z-50 bg-cream/95 backdrop-blur-md border-b border-black/5">
@@ -435,7 +531,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             {report.patient_name}
           </h1>
           <p className="mt-2 text-[14px] text-gray-400">
-            {report.patient_age} years · {report.patient_gender} · ZenScan Full Body
+            {report.patient_age ?? "—"} years · {report.patient_gender ?? "—"} · ZenScan Full Body
           </p>
         </div>
       </div>
@@ -499,7 +595,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
             {/* Right: ZenScore + severity bars */}
             <div className="flex flex-col items-center gap-5 sm:flex-row lg:flex-col lg:items-end lg:gap-4 flex-shrink-0">
-              <ZenScoreRing score={report.coverage_index} severity={report.overall_severity} />
+              <ZenScoreRing score={report.coverage_index ?? 0} severity={report.overall_severity ?? "normal"} />
 
               {/* Severity distribution */}
               <div className="w-full min-w-[180px] space-y-2">
@@ -525,7 +621,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       </div>
 
       {/* ── Main content ───────────────────────────────────────────────── */}
-      <main className="mx-auto max-w-5xl px-6 pb-20 space-y-12">
+      <main className={cn("mx-auto max-w-5xl px-6 space-y-12", isAdminPreview ? "pb-32" : "pb-20")}>
 
         {/* ── AI Summary ──────────────────────────────────────────────── */}
         {report.summary && (
@@ -559,7 +655,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         {/* ── Key stats ───────────────────────────────────────────────── */}
         <section>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatChip icon={Shield} label="ZenCoverage" value={`${report.coverage_index}%`} sub="body scanned" accent="emerald" />
+            <StatChip icon={Shield} label="ZenCoverage" value={`${report.coverage_index ?? 0}%`} sub="body scanned" accent="emerald" />
             <StatChip icon={Activity} label="Total Findings" value={totalFindings} sub={`${organs.length} organ systems`} />
             <StatChip icon={AlertTriangle} label="Critical" value={critical} sub={critical > 0 ? "needs attention" : "none found"} accent={critical > 0 ? "red" : undefined} />
             <StatChip icon={Target} label="Priorities" value={priorities.length} sub="personalised actions" />

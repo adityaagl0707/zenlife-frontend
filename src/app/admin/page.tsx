@@ -1365,39 +1365,65 @@ export default function AdminPage() {
 
                   return (
                     <div className="space-y-5">
-                      {/* ZenScore card */}
-                      <div className={`card border ${scoreBg} flex items-center gap-6`}>
-                        <div className="text-center min-w-[80px]">
-                          <p className={`text-5xl font-black ${scoreColor}`}>{computedScore}</p>
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">ZenScore</p>
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-bold text-gray-700">Auto-computed from organ scores</p>
-                          <div className="flex flex-wrap gap-2 text-[11px]">
-                            {criticalOrgans.length > 0 && <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 font-semibold">{criticalOrgans.length} critical organ{criticalOrgans.length > 1 ? "s" : ""} (−{criticalOrgans.length * 15} pts)</span>}
-                            {majorOrgans.length   > 0 && <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 font-semibold">{majorOrgans.length} major (−{majorOrgans.length * 7} pts)</span>}
-                            {minorOrgans.length   > 0 && <span className="rounded-full bg-yellow-100 text-yellow-700 px-2 py-0.5 font-semibold">{minorOrgans.length} minor (−{minorOrgans.length * 3} pts)</span>}
-                            {organs.filter(o => o.severity?.toLowerCase() === "normal").length > 0 && <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 font-semibold">{organs.filter(o => o.severity?.toLowerCase() === "normal").length} normal</span>}
+
+                      {/* ── 1. Generate Report button — always at top ── */}
+                      <button
+                        onClick={handleGenerate}
+                        disabled={generating || organs.length === 0}
+                        className="w-full rounded-2xl bg-zen-800 py-4 text-base font-bold text-white hover:bg-zen-700 disabled:opacity-50 flex items-center justify-center gap-3 transition-all shadow-md"
+                      >
+                        {generating ? (
+                          <><Loader2 className="h-5 w-5 animate-spin" /> Generating — ZenScore · Body Age · Priorities…</>
+                        ) : isGenerated ? (
+                          <><RefreshCw className="h-5 w-5" /> Regenerate Report</>
+                        ) : (
+                          <><Sparkles className="h-5 w-5" /> Generate Report</>
+                        )}
+                      </button>
+                      {organs.length === 0 && !generating && (
+                        <p className="text-center text-xs text-gray-400 -mt-3">Enter & save report data in the previous tab first.</p>
+                      )}
+
+                      {/* ── 2. ZenScore — only show when organs exist ── */}
+                      {organs.length > 0 && (
+                        <div className={`card border ${scoreBg} flex items-center gap-6`}>
+                          <div className="text-center min-w-[80px]">
+                            <p className={`text-5xl font-black ${scoreColor}`}>{computedScore}</p>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">ZenScore</p>
                           </div>
-                          <p className="text-[11px] text-gray-400">Formula: 100 − (critical×15) − (major×7) − (minor×3)</p>
+                          <div className="flex-1 space-y-1">
+                            <p className="text-sm font-bold text-gray-700">Auto-computed from organ scores</p>
+                            <div className="flex flex-wrap gap-2 text-[11px]">
+                              {criticalOrgans.length > 0 && <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 font-semibold">{criticalOrgans.length} critical (−{criticalOrgans.length * 15} pts)</span>}
+                              {majorOrgans.length   > 0 && <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 font-semibold">{majorOrgans.length} major (−{majorOrgans.length * 7} pts)</span>}
+                              {minorOrgans.length   > 0 && <span className="rounded-full bg-yellow-100 text-yellow-700 px-2 py-0.5 font-semibold">{minorOrgans.length} minor (−{minorOrgans.length * 3} pts)</span>}
+                              {organs.filter(o => o.severity?.toLowerCase() === "normal").length > 0 && <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 font-semibold">{organs.filter(o => o.severity?.toLowerCase() === "normal").length} normal</span>}
+                            </div>
+                            <p className="text-[11px] text-gray-400">100 − (critical×15) − (major×7) − (minor×3)</p>
+                          </div>
                         </div>
-                      </div>
+                      )}
 
-                      {/* AI Summary */}
-                      <div className="card space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-zen-600" />
-                          <p className="text-sm font-bold text-gray-700">AI Summary <span className="text-xs font-normal text-gray-400">(auto-generated · edit if needed)</span></p>
+                      {/* ── 3. AI Summary — only when organs exist ── */}
+                      {organs.length > 0 && (
+                        <div className="card space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-zen-600" />
+                            <p className="text-sm font-bold text-gray-700">AI Summary <span className="text-xs font-normal text-gray-400">(auto-generated · edit if needed)</span></p>
+                          </div>
+                          <Textarea
+                            rows={4}
+                            value={editedSummary || generatedSummary}
+                            onChange={e => setEditedSummary(e.target.value)}
+                            className="text-sm text-gray-700"
+                          />
                         </div>
-                        <Textarea
-                          rows={4}
-                          value={editedSummary || generatedSummary}
-                          onChange={e => setEditedSummary(e.target.value)}
-                          className="text-sm text-gray-700"
-                        />
-                      </div>
+                      )}
 
-                      {/* Generated priorities list */}
+                      {/* ── 4. Body Age — shown after generation ── */}
+                      {isGenerated && <BodyAgeSection reportId={selectedReportId!} />}
+
+                      {/* ── 5. Health Priorities — shown after generation ── */}
                       {isGenerated && priorities.length > 0 && (
                         <div className="card space-y-3">
                           <div className="flex items-center gap-2">
@@ -1413,24 +1439,6 @@ export default function AdminPage() {
                             ))}
                           </div>
                         </div>
-                      )}
-
-                      {/* ── Generate Report button ── */}
-                      <button
-                        onClick={handleGenerate}
-                        disabled={generating || organs.length === 0}
-                        className="w-full rounded-2xl bg-zen-800 py-4 text-base font-bold text-white hover:bg-zen-700 disabled:opacity-50 flex items-center justify-center gap-3 transition-all shadow-md"
-                      >
-                        {generating ? (
-                          <><Loader2 className="h-5 w-5 animate-spin" /> Generating — ZenScore · Body Age · Priorities…</>
-                        ) : isGenerated ? (
-                          <><RefreshCw className="h-5 w-5" /> Regenerate Report</>
-                        ) : (
-                          <><Sparkles className="h-5 w-5" /> Generate Report</>
-                        )}
-                      </button>
-                      {organs.length === 0 && (
-                        <p className="text-center text-xs text-gray-400 -mt-3">Enter & save report data first to enable generation.</p>
                       )}
 
                       {/* ── Preview Report ── */}
