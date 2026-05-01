@@ -89,17 +89,23 @@ export interface AuthUser {
 export interface Order {
   id: number;
   booking_id: string;
+  zen_id?: string | null;
   patient_name: string;
   patient_age: number;
   patient_gender: string;
   scan_type: string;
   status: "pending" | "scheduled" | "completed";
   scan_date: string | null;
+  report_date?: string | null;
+  next_visit?: string | null;
   amount: number;
   has_report: boolean;
   report_id: number | null;
   is_published: boolean;
   tests_complete: boolean;
+  tests_total?: number;
+  tests_completed?: number;
+  tests_pending?: string[];
 }
 
 export interface Report {

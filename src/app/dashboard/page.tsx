@@ -117,9 +117,19 @@ function ScanEntry({ order, isLatest }: { order: Order; isLatest: boolean }) {
               {order.patient_name}
             </h3>
             <p className="mt-0.5 text-[12px] text-gray-400">
-              {order.patient_age} yrs · {order.patient_gender} · {order.scan_type}
+              {order.patient_age ? `${order.patient_age} yrs · ` : ""}
+              {order.patient_gender ? `${order.patient_gender} · ` : ""}
+              {order.scan_type}
             </p>
-            <p className="mt-1 text-[11px] font-mono text-gray-300">{order.booking_id}</p>
+            <p className="mt-1 text-[11px] font-mono text-gray-300">
+              {order.zen_id ? <>Patient ID: <span className="text-gray-500">{order.zen_id}</span> · </> : null}
+              Booking: {order.booking_id}
+            </p>
+            {order.tests_total !== undefined && order.tests_total > 0 && !order.is_published && (
+              <p className="mt-1 text-[11px] text-gray-400">
+                Tests: {order.tests_completed}/{order.tests_total} complete
+              </p>
+            )}
           </div>
 
           {/* Amount */}
