@@ -316,9 +316,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
   function openOrganPanel(organ: OrganScore) {
     const params = new Set((ORGAN_PARAM_MAP[organ.organ_name] ?? []).map((p) => p.toLowerCase()));
+    // Filter findings to only those belonging to this organ's parameter list
     const organFindings = findings.filter((f) => params.has(f.name?.toLowerCase().trim() ?? ""));
     setPanelOrgan(organ);
-    setPanelFindings(organFindings.length ? organFindings : findings);
+    setPanelFindings(organFindings);   // show only matched findings — never fall back to all
     setPanelOpen(true);
   }
 

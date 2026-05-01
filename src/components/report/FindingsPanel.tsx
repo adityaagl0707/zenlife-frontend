@@ -247,7 +247,9 @@ export default function FindingsPanel({ organ, findings, onClose }: Props) {
               </div>
               <h2 className="text-xl font-extrabold text-gray-900 leading-tight">{title}</h2>
               <p className="text-xs text-gray-400 mt-0.5">
-                {findings.length} finding{findings.length !== 1 ? "s" : ""} · click any card for details
+                {findings.length === 0
+                  ? "No parameters recorded for this organ system"
+                  : `${findings.length} finding${findings.length !== 1 ? "s" : ""} · click any card for details`}
               </p>
             </div>
             <button
@@ -293,7 +295,20 @@ export default function FindingsPanel({ organ, findings, onClose }: Props) {
 
         {/* Findings list */}
         <div className="flex-1 overflow-y-auto">
-          {filtered.length === 0 ? (
+          {findings.length === 0 ? (
+            // No findings at all for this organ system
+            <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+              <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <FlaskConical className="h-7 w-7 text-gray-300" />
+              </div>
+              <p className="text-sm font-semibold text-gray-500">No parameters recorded</p>
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                No tests for this organ system were uploaded in this report.
+                Upload the relevant report sections to see findings here.
+              </p>
+            </div>
+          ) : filtered.length === 0 ? (
+            // Has findings but current severity filter returns nothing
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                 <FlaskConical className="h-7 w-7 text-gray-300" />
