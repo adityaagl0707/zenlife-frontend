@@ -49,7 +49,7 @@ function formatDateShort(d: string | null) {
 
 function getOrderStage(order: Order): "billing_done" | "test_complete" | "published" {
   if (order.is_published) return "published";
-  if (order.status === "completed") return "test_complete";
+  if (order.tests_complete) return "test_complete";
   return "billing_done";
 }
 
@@ -169,9 +169,9 @@ function ScanEntry({ order, isLatest }: { order: Order; isLatest: boolean }) {
           )}
           {!(order.is_published && order.report_id) && (
             <span className="text-[11px] text-gray-400 italic">
-              {order.status === "completed"
+              {order.tests_complete
                 ? "Report being prepared by ZenLife team"
-                : "Available after your scan is complete"}
+                : "Tests pending — your report will be available after all tests are complete"}
             </span>
           )}
         </div>

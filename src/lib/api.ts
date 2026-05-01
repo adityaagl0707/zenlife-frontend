@@ -66,6 +66,7 @@ export interface Order {
   has_report: boolean;
   report_id: number | null;
   is_published: boolean;
+  tests_complete: boolean;
 }
 
 export interface Report {

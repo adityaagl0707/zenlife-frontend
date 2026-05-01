@@ -1255,6 +1255,7 @@ export default function AdminPage() {
                 {reportStep === "data" && (
                   <ReportSectionsPanel
                     reportId={selectedReportId}
+                    patientGender={selectedPatient?.gender}
                     onSaved={() => loadReportDetail(selectedReportId!)}
                   />
                 )}
