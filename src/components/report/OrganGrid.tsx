@@ -48,12 +48,13 @@ export default function OrganGrid({
   onSelect: (organ: OrganScore) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 auto-rows-fr">
       {organs.map((organ) => {
         const s = organ.severity?.toLowerCase() ?? "normal";
         const counts = computeOrganCounts(organ.organ_name, findings);
         const totalParams = organTotalParams(organ.organ_name);
         const imported = counts.critical + counts.major + counts.minor + counts.normal;
+        const notImported = Math.max(0, totalParams - imported);
 
         // Mini severity distribution bar segments
         const segments = [
@@ -67,7 +68,7 @@ export default function OrganGrid({
           <button
             key={organ.id}
             onClick={() => onSelect(organ)}
-            className="group relative flex flex-col rounded-2xl bg-white overflow-hidden shadow-sm ring-1 ring-black/5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-black/10"
+            className="group relative flex flex-col rounded-2xl bg-white overflow-hidden shadow-sm ring-1 ring-black/5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-black/10 min-h-[160px]"
           >
             {/* Severity colour band at top */}
             <div className={cn("h-[3px] w-full", SEV_TOP[s] ?? SEV_TOP.normal)} />
@@ -85,11 +86,9 @@ export default function OrganGrid({
               </div>
 
               {/* Param count */}
-              {totalParams > 0 && (
-                <p className="text-[10px] text-gray-400 font-medium">
-                  {totalParams} parameters
-                </p>
-              )}
+              <p className="text-[10px] text-gray-400 font-medium">
+                {totalParams > 0 ? `${totalParams} parameters` : "—"}
+              </p>
 
               <div className="mt-auto pt-2 border-t border-gray-100 space-y-2">
                 {imported > 0 ? (
@@ -107,17 +106,27 @@ export default function OrganGrid({
                       </div>
                     )}
                     {/* Severity inline pills */}
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 items-center">
                       {(["critical", "major", "minor", "normal"] as const).filter(sev => counts[sev] > 0).map(sev => (
                         <span key={sev} className={cn("inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold", PILL_STYLE[sev])}>
                           <span className={cn("h-1.5 w-1.5 rounded-full", SEV_DOT[sev])} />
                           {counts[sev]}
                         </span>
                       ))}
+                      {notImported > 0 && (
+                        <span className="ml-auto text-[9px] text-gray-300 font-medium whitespace-nowrap">
+                          {notImported} not imported
+                        </span>
+                      )}
                     </div>
                   </>
                 ) : (
-                  <p className="text-[10px] text-gray-300 italic">No data imported</p>
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] text-gray-300 italic">No data imported</p>
+                    {totalParams > 0 && (
+                      <p className="text-[9px] text-gray-200 font-medium">{totalParams} params pending</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
