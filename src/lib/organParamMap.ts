@@ -175,6 +175,20 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "brain: ischemic causes","brain: degenerative",
     "basal ganglia","ventricles","midbrain","pons","meninges",
   ],
+
+  // ── Gender-specific organ systems ──────────────────────────────────────────
+  "Women's Health": [
+    "pap smear","hpv dna test","mammography","breast ultrasound",
+    "transvaginal ultrasound","endometrial thickness","pelvic ultrasound",
+    "ca-125","he4","ca 15-3","fsh","lh","progesterone","prolactin",
+    "amh","estradiol (e2)","dhea-s","uterus","ovaries","cervix",
+    "endometrium","breast",
+  ],
+
+  "Men's Health": [
+    "psa","prostate volume","testosterone","free testosterone",
+    "shbg","prostate","seminal vesicles",
+  ],
 };
 
 export type SeverityCounts = { critical: number; major: number; minor: number; normal: number };
