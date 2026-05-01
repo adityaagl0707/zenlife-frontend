@@ -1237,7 +1237,7 @@ export default function AdminPage() {
             <div className="flex gap-2 overflow-x-auto pb-1">
               {([
                 { id: "data", label: "📋 Enter Report Data" },
-                { id: "done", label: "✓ Done" },
+                { id: "done", label: "📄 Report" },
               ] as const).map(({ id, label }) => (
                 <button key={id} onClick={() => setReportStep(id)}
                   className={cn("flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
