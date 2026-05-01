@@ -5,7 +5,7 @@ import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload
 import { cn } from "@/lib/utils";
 import ReportSectionsPanel from "@/components/admin/ReportSectionsPanel";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com").replace(/\/api\/v1\/?$/, "");
 const BASE = `${API_URL}/api/v1`;
 
 async function api(path: string, method = "GET", body?: unknown) {
@@ -974,7 +974,7 @@ function BodyAgeSection({ reportId }: { reportId: number }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────
 
-type Patient = { id: number; name: string; phone: string; age: number; gender: string; orders: { id: number; booking_id: string; status: string; has_report: boolean; report_id: number | null }[] };
+type Patient = { id: number; name: string; phone: string; age: number; gender: string; orders: { id: number; booking_id: string; status: string; has_report: boolean; report_id: number | null; is_published: boolean }[] };
 
 function SyncAllOrgansButton() {
   const [syncing, setSyncing] = useState(false);
@@ -1012,12 +1012,17 @@ export default function AdminPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [reportDetail, setReportDetail] = useState<Record<string, unknown> | null>(null);
-  const [reportStep, setReportStep] = useState<"report" | "data" | "priorities" | "done">("data");
+  const [reportStep, setReportStep] = useState<"report" | "data" | "done">("data");
 
   // New patient form
   const [patientForm, setPatientForm] = useState({ phone: "", name: "", age: "", gender: "Male" });
   const [orderForm, setOrderForm] = useState({ booking_id: "", scan_date: "", amount: "27500", scan_type: "ZenScan", status: "completed" });
-  const [reportForm, setReportForm] = useState({ coverage_index: "90", overall_severity: "normal", summary: "", report_date: "", next_visit: "" });
+  const [reportForm, setReportForm] = useState({ report_date: "", next_visit: "" });
+  const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState(false);
+  const [editedSummary, setEditedSummary] = useState("");
+  const [publishing, setPublishing] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
@@ -1048,8 +1053,9 @@ export default function AdminPage() {
         scan_date: orderForm.scan_date || new Date().toISOString().split("T")[0],
       });
       const report = await api(`/admin/orders/${order.id}/report`, "POST", {
-        ...reportForm,
-        coverage_index: parseFloat(reportForm.coverage_index),
+        coverage_index: 0,
+        overall_severity: "normal",
+        summary: "",
         report_date: reportForm.report_date || new Date().toISOString().split("T")[0],
         next_visit: reportForm.next_visit || "",
       });
@@ -1107,16 +1113,22 @@ export default function AdminPage() {
                         <p className="text-sm text-gray-500">{p.phone} · {p.age} yrs · {p.gender}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {p.orders.length} order{p.orders.length !== 1 ? "s" : ""} ·{" "}
-                          {p.orders.filter((o: {has_report: boolean}) => o.has_report).length} report{p.orders.filter((o: {has_report: boolean}) => o.has_report).length !== 1 ? "s" : ""}
+                          {p.orders.filter(o => o.has_report).length} report{p.orders.filter(o => o.has_report).length !== 1 ? "s" : ""}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {p.orders.map((o: {id: number; booking_id: string; has_report: boolean; report_id: number | null; status: string}) => (
+                      {p.orders.map((o) => (
                         <div key={o.id} className="text-right">
                           <p className="text-xs font-semibold text-gray-600">{o.booking_id}</p>
                           {o.has_report && o.report_id && (
-                            <Link href={`/report/${o.report_id}`} className="text-xs text-zen-600 hover:underline">View Report →</Link>
+                            <>
+                              <span className={cn("inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mb-0.5", o.is_published ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")}>
+                                {o.is_published ? "Published" : "Draft"}
+                              </span>
+                              <br />
+                              <Link href={`/report/${o.report_id}?admin=1`} className="text-xs text-zen-600 hover:underline">View Report →</Link>
+                            </>
                           )}
                         </div>
                       ))}
@@ -1147,7 +1159,7 @@ export default function AdminPage() {
             </button>
 
             <form onSubmit={handleCreatePatient} className="card space-y-6">
-              <SectionHeader title="Add New Patient" subtitle="Fill in patient details, scan info, and report summary." />
+              <SectionHeader title="Add New Patient" subtitle="Fill in patient details and scan info. ZenScore & summary are auto-generated after data entry." />
 
               <div className="space-y-4">
                 <p className="text-sm font-bold text-gray-700 border-b pb-2">Patient Information</p>
@@ -1191,27 +1203,10 @@ export default function AdminPage() {
                       <option value="pending">Pending</option>
                     </Select>
                   </Field>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm font-bold text-gray-700 border-b pb-2">Report Summary</p>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <Field label="ZenScore (0–100)">
-                    <Input type="number" min={0} max={100} value={reportForm.coverage_index} onChange={e => setReportForm({...reportForm, coverage_index: e.target.value})} />
-                  </Field>
-                  <Field label="Overall Severity">
-                    <Select value={reportForm.overall_severity} onChange={e => setReportForm({...reportForm, overall_severity: e.target.value})}>
-                      {SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </Select>
-                  </Field>
                   <Field label="Next Visit Date">
                     <Input type="date" value={reportForm.next_visit} onChange={e => setReportForm({...reportForm, next_visit: e.target.value})} />
                   </Field>
                 </div>
-                <Field label="AI Summary (shown on report)">
-                  <Textarea rows={3} value={reportForm.summary} onChange={e => setReportForm({...reportForm, summary: e.target.value})} placeholder="Overall health summary for this patient..." required />
-                </Field>
               </div>
 
               {err && <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{err}</p>}
@@ -1235,17 +1230,14 @@ export default function AdminPage() {
                 <p className="text-xs text-gray-400">Report #{selectedReportId}</p>
                 <h2 className="text-xl font-bold text-gray-900">{selectedPatient?.name ?? "Report Builder"}</h2>
               </div>
-              <Link href={`/report/${selectedReportId}`} target="_blank" className="ml-auto text-sm text-zen-600 hover:text-zen-800 font-medium">
-                Preview Report →
-              </Link>
+              <div className="ml-auto" />
             </div>
 
             {/* Step tabs */}
             <div className="flex gap-2 overflow-x-auto pb-1">
               {([
-                { id: "data",       label: "📋 Enter Report Data" },
-                { id: "priorities", label: "⭐ Priorities" },
-                { id: "done",       label: "✓ Done" },
+                { id: "data", label: "📋 Enter Report Data" },
+                { id: "done", label: "✓ Done" },
               ] as const).map(({ id, label }) => (
                 <button key={id} onClick={() => setReportStep(id)}
                   className={cn("flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
@@ -1266,31 +1258,241 @@ export default function AdminPage() {
                   />
                 )}
 
-                {reportStep === "priorities" && (
-                  <PrioritiesSection
-                    reportId={selectedReportId}
-                    priorities={(reportDetail.priorities as Array<{id: number; priority_order: number; title: string}>) ?? []}
-                    onChanged={() => loadReportDetail(selectedReportId!)}
-                  />
-                )}
+                {reportStep === "done" && (() => {
+                  // ── ZenScore auto-compute ─────────────────────────────────
+                  type OrganRow = { organ_name: string; severity: string };
+                  const organs = (reportDetail?.organs as OrganRow[] | undefined) ?? [];
+                  const criticalOrgans = organs.filter(o => o.severity?.toLowerCase() === "critical");
+                  const majorOrgans   = organs.filter(o => o.severity?.toLowerCase() === "major");
+                  const minorOrgans   = organs.filter(o => o.severity?.toLowerCase() === "minor");
 
-                {reportStep === "done" && (
-                  <div className="card text-center space-y-5">
-                    <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Report Ready</h3>
-                      <p className="mt-2 text-gray-500">The patient can now log in and view their ZenReport.</p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <Link href={`/report/${selectedReportId}`} className="btn-primary px-8 py-3 text-sm">
-                        Preview Report
-                      </Link>
-                      <button onClick={() => { setView("list"); loadPatients(); setSelectedReportId(null); setReportDetail(null); }} className="rounded-full border-2 border-zen-800 px-8 py-3 text-sm font-semibold text-zen-800 hover:bg-zen-50">
-                        Add Another Patient
+                  const computedScore = Math.max(0, Math.min(100, Math.round(
+                    100 - criticalOrgans.length * 15 - majorOrgans.length * 7 - minorOrgans.length * 3
+                  )));
+
+                  const overallSeverity =
+                    criticalOrgans.length > 0 ? "critical" :
+                    majorOrgans.length   > 0 ? "major" :
+                    minorOrgans.length   > 0 ? "minor" : "normal";
+
+                  const firstName = selectedPatient?.name?.split(" ")[0] ?? "The patient";
+                  function autoSummary(): string {
+                    const parts: string[] = [];
+                    if (criticalOrgans.length > 0)
+                      parts.push(`${firstName}'s report reveals critical concerns in ${criticalOrgans.map(o => o.organ_name).join(" and ")}, requiring urgent medical attention.`);
+                    if (majorOrgans.length > 0)
+                      parts.push(`${majorOrgans.map(o => o.organ_name).join(" and ")} ${majorOrgans.length > 1 ? "show" : "shows"} high health risk and need prompt review.`);
+                    if (minorOrgans.length > 0)
+                      parts.push(`${minorOrgans.map(o => o.organ_name).join(" and ")} ${minorOrgans.length > 1 ? "show" : "shows"} mild concerns worth monitoring.`);
+                    const normalCount = organs.filter(o => o.severity?.toLowerCase() === "normal").length;
+                    if (parts.length === 0)
+                      return `${firstName}'s health report shows all organ systems within normal range — excellent overall health. Continue current lifestyle habits and schedule a follow-up next year.`;
+                    if (normalCount > 0) parts.push(`All other organ systems are within healthy range.`);
+                    if (criticalOrgans.length > 0) parts.push(`Immediate specialist consultation is strongly recommended.`);
+                    else if (majorOrgans.length > 0) parts.push(`A follow-up consultation is recommended to address these findings.`);
+                    else parts.push(`Lifestyle modifications and periodic monitoring are advised.`);
+                    return parts.join(" ");
+                  }
+
+                  const generatedSummary = autoSummary();
+                  const scoreColor =
+                    computedScore >= 85 ? "text-emerald-600" :
+                    computedScore >= 70 ? "text-yellow-600" :
+                    computedScore >= 50 ? "text-amber-600" : "text-red-600";
+                  const scoreBg =
+                    computedScore >= 85 ? "bg-emerald-50 border-emerald-200" :
+                    computedScore >= 70 ? "bg-yellow-50 border-yellow-200" :
+                    computedScore >= 50 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200";
+
+                  const isPublished = !!(reportDetail?.is_published);
+                  const priorities = (reportDetail?.priorities as Array<{id: number; priority_order: number; title: string}>) ?? [];
+                  const isGenerated = priorities.length > 0 || generated;
+
+                  async function handleGenerate() {
+                    if (!selectedReportId) return;
+                    setGenerating(true);
+                    try {
+                      // 1. Save ZenScore + Summary
+                      await api(`/admin/reports/${selectedReportId}`, "PATCH", {
+                        coverage_index: computedScore,
+                        overall_severity: overallSeverity,
+                        summary: editedSummary || generatedSummary,
+                      });
+                      // 2. Calculate Body Age (non-blocking failure)
+                      try {
+                        await fetch(`${BASE}/admin/reports/${selectedReportId}/calculate-body-age`, { method: "POST" });
+                      } catch { /* body age missing data is ok */ }
+                      // 3. Generate Priorities with AI
+                      await api(`/admin/reports/${selectedReportId}/generate-priorities`, "POST");
+                      setGenerated(true);
+                      loadReportDetail(selectedReportId);
+                    } catch (e: unknown) { alert(e instanceof Error ? e.message : "Generation failed"); }
+                    finally { setGenerating(false); }
+                  }
+
+                  async function handlePublish() {
+                    if (!selectedReportId) return;
+                    setPublishing(true);
+                    try {
+                      await api(`/admin/reports/${selectedReportId}/publish`, "POST");
+                      loadReportDetail(selectedReportId);
+                      loadPatients();
+                    } finally { setPublishing(false); }
+                  }
+
+                  async function handleUnpublish() {
+                    if (!selectedReportId) return;
+                    setPublishing(true);
+                    try {
+                      await api(`/admin/reports/${selectedReportId}/unpublish`, "POST");
+                      loadReportDetail(selectedReportId);
+                      loadPatients();
+                    } finally { setPublishing(false); }
+                  }
+
+                  async function handleClearData() {
+                    if (!selectedReportId) return;
+                    if (!confirm("This will delete ALL findings, organ scores, sections and reset the report. Are you sure?")) return;
+                    setClearing(true);
+                    try {
+                      await api(`/admin/reports/${selectedReportId}/clear-data`, "DELETE");
+                      setGenerated(false);
+                      setEditedSummary("");
+                      loadReportDetail(selectedReportId);
+                      loadPatients();
+                    } finally { setClearing(false); }
+                  }
+
+                  return (
+                    <div className="space-y-5">
+                      {/* ZenScore card */}
+                      <div className={`card border ${scoreBg} flex items-center gap-6`}>
+                        <div className="text-center min-w-[80px]">
+                          <p className={`text-5xl font-black ${scoreColor}`}>{computedScore}</p>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">ZenScore</p>
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <p className="text-sm font-bold text-gray-700">Auto-computed from organ scores</p>
+                          <div className="flex flex-wrap gap-2 text-[11px]">
+                            {criticalOrgans.length > 0 && <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 font-semibold">{criticalOrgans.length} critical organ{criticalOrgans.length > 1 ? "s" : ""} (−{criticalOrgans.length * 15} pts)</span>}
+                            {majorOrgans.length   > 0 && <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 font-semibold">{majorOrgans.length} major (−{majorOrgans.length * 7} pts)</span>}
+                            {minorOrgans.length   > 0 && <span className="rounded-full bg-yellow-100 text-yellow-700 px-2 py-0.5 font-semibold">{minorOrgans.length} minor (−{minorOrgans.length * 3} pts)</span>}
+                            {organs.filter(o => o.severity?.toLowerCase() === "normal").length > 0 && <span className="rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 font-semibold">{organs.filter(o => o.severity?.toLowerCase() === "normal").length} normal</span>}
+                          </div>
+                          <p className="text-[11px] text-gray-400">Formula: 100 − (critical×15) − (major×7) − (minor×3)</p>
+                        </div>
+                      </div>
+
+                      {/* AI Summary */}
+                      <div className="card space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-zen-600" />
+                          <p className="text-sm font-bold text-gray-700">AI Summary <span className="text-xs font-normal text-gray-400">(auto-generated · edit if needed)</span></p>
+                        </div>
+                        <Textarea
+                          rows={4}
+                          value={editedSummary || generatedSummary}
+                          onChange={e => setEditedSummary(e.target.value)}
+                          className="text-sm text-gray-700"
+                        />
+                      </div>
+
+                      {/* Generated priorities list */}
+                      {isGenerated && priorities.length > 0 && (
+                        <div className="card space-y-3">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            <p className="text-sm font-bold text-gray-700">Health Priorities ({priorities.length})</p>
+                          </div>
+                          <div className="space-y-1.5">
+                            {priorities.map(p => (
+                              <div key={p.id} className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2 text-sm">
+                                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-zen-800 text-[10px] font-bold text-white">{p.priority_order}</span>
+                                <span className="text-gray-700">{p.title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── Generate Report button ── */}
+                      <button
+                        onClick={handleGenerate}
+                        disabled={generating || organs.length === 0}
+                        className="w-full rounded-2xl bg-zen-800 py-4 text-base font-bold text-white hover:bg-zen-700 disabled:opacity-50 flex items-center justify-center gap-3 transition-all shadow-md"
+                      >
+                        {generating ? (
+                          <><Loader2 className="h-5 w-5 animate-spin" /> Generating — ZenScore · Body Age · Priorities…</>
+                        ) : isGenerated ? (
+                          <><RefreshCw className="h-5 w-5" /> Regenerate Report</>
+                        ) : (
+                          <><Sparkles className="h-5 w-5" /> Generate Report</>
+                        )}
                       </button>
+                      {organs.length === 0 && (
+                        <p className="text-center text-xs text-gray-400 -mt-3">Enter & save report data first to enable generation.</p>
+                      )}
+
+                      {/* ── Preview Report ── */}
+                      {isGenerated && (
+                        <Link
+                          href={`/report/${selectedReportId}?admin=1`}
+                          target="_blank"
+                          className="flex items-center justify-center gap-2 w-full rounded-2xl border-2 border-zen-800 py-3 text-sm font-bold text-zen-800 hover:bg-zen-50 transition-all"
+                        >
+                          Preview Report →
+                        </Link>
+                      )}
+
+                      {/* ── Publish / Status ── */}
+                      {isGenerated && (
+                        <div className={cn("rounded-2xl border px-5 py-4 space-y-3", isPublished ? "bg-emerald-50 border-emerald-200" : "bg-white border-gray-200")}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className={cn("h-2.5 w-2.5 rounded-full", isPublished ? "bg-emerald-500 animate-pulse" : "bg-amber-400")} />
+                              <p className={cn("text-sm font-semibold", isPublished ? "text-emerald-700" : "text-gray-600")}>
+                                {isPublished ? "Published — visible to patient" : "Draft — hidden from patient"}
+                              </p>
+                            </div>
+                            {isPublished && (
+                              <button onClick={handleUnpublish} disabled={publishing} className="text-xs text-gray-400 hover:text-gray-600 underline">
+                                Unpublish
+                              </button>
+                            )}
+                          </div>
+                          {!isPublished && (
+                            <button
+                              onClick={handlePublish}
+                              disabled={publishing}
+                              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                            >
+                              {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                              {publishing ? "Publishing…" : "Publish Report"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Danger zone */}
+                      <div className="card border border-red-100 space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-widest text-red-400">Danger Zone</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-gray-500">Delete all findings, organ scores & sections and reset this report.</p>
+                          <button onClick={handleClearData} disabled={clearing} className="flex-shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 disabled:opacity-50 flex items-center gap-1.5">
+                            {clearing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                            Clear All Data
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center">
+                        <button onClick={() => { setView("list"); loadPatients(); setSelectedReportId(null); setReportDetail(null); setGenerated(false); setEditedSummary(""); }} className="rounded-full border-2 border-zen-800 px-8 py-3 text-sm font-semibold text-zen-800 hover:bg-zen-50">
+                          Back to Patient List
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
           </div>
