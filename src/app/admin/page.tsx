@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical, RefreshCw, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import ReportSectionsPanel from "@/components/admin/ReportSectionsPanel";
+import ReportSectionsPanel, { TestStatusPanel, visibleSectionsForGender } from "@/components/admin/ReportSectionsPanel";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com").replace(/\/api\/v1\/?$/, "");
 const BASE = `${API_URL}/api/v1`;
@@ -1012,7 +1012,7 @@ export default function AdminPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [reportDetail, setReportDetail] = useState<Record<string, unknown> | null>(null);
-  const [reportStep, setReportStep] = useState<"report" | "data" | "done">("data");
+  const [reportStep, setReportStep] = useState<"report" | "test_status" | "data" | "done">("test_status");
 
   // New patient form
   const [patientForm, setPatientForm] = useState({ phone: "", name: "", age: "", gender: "Male" });
@@ -1061,7 +1061,7 @@ export default function AdminPage() {
         next_visit: reportForm.next_visit || "",
       });
       setSelectedReportId(report.id);
-      setReportStep("data");
+      setReportStep("test_status");
       loadPatients();
       setView("patient");
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); }
@@ -1136,8 +1136,8 @@ export default function AdminPage() {
                       <button
                         onClick={() => {
                           setSelectedPatient(p);
-                          if (p.orders[0]?.report_id) { setSelectedReportId(p.orders[0].report_id); setReportStep("data"); }
-                          else { setSelectedOrderId(p.orders[0]?.id ?? null); setReportStep("report"); }
+                          if (p.orders[0]?.report_id) { setSelectedReportId(p.orders[0].report_id); setReportStep("test_status"); }
+                          else { setSelectedOrderId(p.orders[0]?.id ?? null); setReportStep("test_status"); }
                           setView("patient");
                         }}
                         className="rounded-full border border-gray-200 p-2 hover:bg-gray-100"
@@ -1237,7 +1237,8 @@ export default function AdminPage() {
             {/* Step tabs */}
             <div className="flex gap-2 overflow-x-auto pb-1">
               {([
-                { id: "data", label: "📋 Enter Report Data" },
+                { id: "test_status", label: "📋 Test Status" },
+                { id: "data", label: "🧪 Enter Report Data" },
                 { id: "done", label: "📄 Report" },
               ] as const).map(({ id, label }) => (
                 <button key={id} onClick={() => setReportStep(id)}
@@ -1251,6 +1252,17 @@ export default function AdminPage() {
             {/* Existing items */}
             {reportDetail && (
               <div className="space-y-4">
+
+                {reportStep === "test_status" && (
+                  <div className="card">
+                    <SectionHeader title="Test Status" subtitle="Mark each test complete as the patient finishes it. The dashboard status updates automatically." />
+                    <TestStatusPanel
+                      reportId={selectedReportId}
+                      sections={visibleSectionsForGender(selectedPatient?.gender)}
+                      onSaved={() => loadReportDetail(selectedReportId!)}
+                    />
+                  </div>
+                )}
 
                 {reportStep === "data" && (
                   <ReportSectionsPanel

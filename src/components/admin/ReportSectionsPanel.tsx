@@ -13,7 +13,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   pending:  "bg-gray-100 text-gray-400 border-gray-200",
 };
 
-const SECTION_META: Record<string, { label: string; icon: string; has_key_findings: boolean; female_only?: boolean }> = {
+export const SECTION_META: Record<string, { label: string; icon: string; has_key_findings: boolean; female_only?: boolean }> = {
   blood:         { label: "Blood Report",         icon: "🩸", has_key_findings: false },
   urine:         { label: "Urine Analysis",       icon: "🧪", has_key_findings: false },
   dexa:          { label: "DEXA Scan",            icon: "🦴", has_key_findings: true },
@@ -25,7 +25,12 @@ const SECTION_META: Record<string, { label: string; icon: string; has_key_findin
   mammography:   { label: "Mammography",          icon: "🎀", has_key_findings: true, female_only: true },
 };
 
-const SECTION_ORDER = ["blood", "urine", "dexa", "calcium_score", "ecg", "chest_xray", "usg", "mri", "mammography"];
+export const SECTION_ORDER = ["blood", "urine", "dexa", "calcium_score", "ecg", "chest_xray", "usg", "mri", "mammography"];
+
+export function visibleSectionsForGender(gender?: string): string[] {
+  const isFemale = (gender || "").toUpperCase() === "F" || (gender || "").toUpperCase() === "FEMALE";
+  return SECTION_ORDER.filter((st) => !SECTION_META[st].female_only || isFemale);
+}
 
 type ParamDef = { name: string; unit: string; normal: string };
 type ParamValue = { value: string; severity: string; clinical_findings: string; recommendations: string };
@@ -476,7 +481,7 @@ function SectionPanel({
 
 // ── Test Status Panel ───────────────────────────────────────────────────────
 
-function TestStatusPanel({ reportId, sections, onSaved }: { reportId: number; sections: string[]; onSaved?: () => void }) {
+export function TestStatusPanel({ reportId, sections, onSaved }: { reportId: number; sections: string[]; onSaved?: () => void }) {
   const [statuses, setStatuses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -573,14 +578,11 @@ function TestStatusPanel({ reportId, sections, onSaved }: { reportId: number; se
 }
 
 export default function ReportSectionsPanel({ reportId, patientGender, onSaved: externalOnSaved }: { reportId: number; patientGender?: string; onSaved?: () => void }) {
-  const [activeSection, setActiveSection] = useState("test_status");
+  const visibleSections = visibleSectionsForGender(patientGender);
+  const [activeSection, setActiveSection] = useState(visibleSections[0] || "blood");
   const [allSections, setAllSections] = useState<Record<string, SectionData>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // Filter sections by gender — Mammography is female-only
-  const isFemale = (patientGender || "").toUpperCase() === "F" || (patientGender || "").toUpperCase() === "FEMALE";
-  const visibleSections = SECTION_ORDER.filter((st) => !SECTION_META[st].female_only || isFemale);
 
   async function loadAll() {
     setLoading(true);
@@ -634,27 +636,10 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
       : 0;
   }
 
-  const isTestStatus = activeSection === "test_status";
-
   return (
     <div className="flex gap-0 min-h-[600px]">
       {/* Left sidebar: section tabs */}
       <div className="w-48 flex-shrink-0 border-r border-gray-100 pr-3 space-y-1">
-        {/* Test Status tab — first */}
-        <button
-          onClick={() => setActiveSection("test_status")}
-          className={cn(
-            "w-full text-left rounded-xl px-3 py-2.5 text-sm transition-all",
-            isTestStatus
-              ? "bg-zen-800 text-white font-semibold"
-              : "text-gray-600 hover:bg-gray-100"
-          )}
-        >
-          <span className="mr-2">📋</span>
-          <span>Test Status</span>
-        </button>
-        <div className="h-px bg-gray-100 my-2" />
-
         {visibleSections.map((st) => {
           const m = SECTION_META[st];
           const filled = sectionFillCounts[st];
@@ -684,35 +669,21 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
 
       {/* Right: active section panel */}
       <div className="flex-1 pl-6">
-        {isTestStatus ? (
-          <>
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-gray-900">📋 Test Status</h3>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Mark each test complete as the patient finishes it. The dashboard status updates automatically.
-              </p>
-            </div>
-            <TestStatusPanel reportId={reportId} sections={visibleSections} onSaved={externalOnSaved} />
-          </>
-        ) : (
-          <>
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
-                {SECTION_META[activeSection].icon} {SECTION_META[activeSection].label}
-              </h3>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Upload the report to auto-extract values, or enter manually. Expand any row to add clinical findings & recommendations.
-              </p>
-            </div>
-            <SectionPanel
-              key={activeSection}
-              reportId={reportId}
-              sectionType={activeSection}
-              initialData={allSections[activeSection] || null}
-              onSaved={loadAll}
-            />
-          </>
-        )}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-gray-900">
+            {SECTION_META[activeSection].icon} {SECTION_META[activeSection].label}
+          </h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Upload the report to auto-extract values, or enter manually. Expand any row to add clinical findings & recommendations.
+          </p>
+        </div>
+        <SectionPanel
+          key={activeSection}
+          reportId={reportId}
+          sectionType={activeSection}
+          initialData={allSections[activeSection] || null}
+          onSaved={loadAll}
+        />
       </div>
     </div>
   );
