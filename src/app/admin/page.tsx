@@ -1023,6 +1023,7 @@ export default function AdminPage() {
   const [editedSummary, setEditedSummary] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [resetCounter, setResetCounter] = useState(0); // bumps on clear-data → remounts BodyAgeSection
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
@@ -1358,6 +1359,7 @@ export default function AdminPage() {
                       await api(`/admin/reports/${selectedReportId}/clear-data`, "DELETE");
                       setGenerated(false);
                       setEditedSummary("");
+                      setResetCounter((c) => c + 1); // forces BodyAgeSection to remount with empty state
                       loadReportDetail(selectedReportId);
                       loadPatients();
                     } finally { setClearing(false); }
@@ -1433,7 +1435,7 @@ export default function AdminPage() {
                       </div>
 
                       {/* ── 4. Body Age — always visible, placeholder until generated ── */}
-                      <BodyAgeSection reportId={selectedReportId!} />
+                      <BodyAgeSection key={`bodyage-${selectedReportId}-${resetCounter}`} reportId={selectedReportId!} />
 
                       {/* ── 5. Health Priorities — always visible, placeholder until generated ── */}
                       <div className="card space-y-3">

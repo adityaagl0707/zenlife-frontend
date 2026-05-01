@@ -177,10 +177,12 @@ function SectionPanel({
   });
   const [defs, setDefs] = useState<ParamDef[]>(initialData?.param_definitions || []);
   const [extracting, setExtracting] = useState(false);
+  const [uploadingTemplate, setUploadingTemplate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [filterSev, setFilterSev] = useState("all");
   const [search, setSearch] = useState("");
+  const templateFileRef = useRef<HTMLInputElement>(null);
 
   const filteredDefs = defs.filter((d) => {
     const hasValue = !!(params[d.name]?.value?.trim());
@@ -231,6 +233,50 @@ function SectionPanel({
     }
   }
 
+  // ── Filled-template (Excel) upload ────────────────────────────────────────
+  async function handleTemplateUpload(file: File) {
+    setUploadingTemplate(true);
+    setMsg("Reading filled template…");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API}/api/v1/admin/upload-lab-results`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Upload failed" }));
+        throw new Error(err.detail || "Upload failed");
+      }
+      const data = await res.json();
+      const findings: Array<{ name: string; value: string; severity: string }> = data.findings || [];
+
+      // Merge values into the section's param map (case-insensitive name match)
+      setParams((prev) => {
+        const updated = { ...prev };
+        const lookup = new Map(defs.map((d) => [d.name.toLowerCase(), d.name]));
+        let merged = 0;
+        for (const f of findings) {
+          const canonical = lookup.get(f.name.toLowerCase());
+          if (canonical) {
+            updated[canonical] = {
+              ...(updated[canonical] || { value: "", severity: "normal", clinical_findings: "", recommendations: "" }),
+              value: f.value,
+              severity: f.severity || updated[canonical]?.severity || "normal",
+            };
+            merged++;
+          }
+        }
+        setMsg(`✓ Imported ${merged} values from template — review below and save.`);
+        return updated;
+      });
+    } catch (e: unknown) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
+    } finally {
+      setUploadingTemplate(false);
+    }
+  }
+
   async function handleSaveAndApply() {
     setSaving(true);
     setMsg("Saving data…");
@@ -260,10 +306,12 @@ function SectionPanel({
 
   return (
     <div className="space-y-5">
-      {/* Upload + Extract */}
-      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5">
-        <p className="text-sm font-semibold text-gray-700 mb-3">Upload {meta.label} (PDF or image)</p>
-        <div className="flex flex-wrap gap-3">
+      {/* Upload — two paths */}
+      <div className="grid gap-3 md:grid-cols-2">
+        {/* Option 1: AI extraction */}
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 flex flex-col">
+          <p className="text-sm font-semibold text-gray-700 mb-1">Option 1 · Upload report (PDF or image)</p>
+          <p className="text-xs text-gray-500 mb-3">AI reads the report and auto-fills all parameters below.</p>
           <input
             ref={fileRef}
             type="file"
@@ -277,22 +325,55 @@ function SectionPanel({
           />
           <button
             onClick={() => fileRef.current?.click()}
-            disabled={extracting}
-            className="flex items-center gap-2 rounded-xl bg-zen-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zen-700 disabled:opacity-50 transition-colors"
+            disabled={extracting || uploadingTemplate}
+            className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-zen-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zen-700 disabled:opacity-50 transition-colors"
           >
             {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {extracting ? "Extracting with AI…" : "Upload & Extract with AI"}
           </button>
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={extracting}
-            className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            <Upload className="h-4 w-4" />
-            Upload only
-          </button>
         </div>
-        <p className="mt-2 text-xs text-gray-400">AI reads the report and auto-fills all parameters below. Review and correct before saving.</p>
+
+        {/* Option 2: Template */}
+        {sectionType === "blood" ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 flex flex-col">
+            <p className="text-sm font-semibold text-gray-700 mb-1">Option 2 · Excel template</p>
+            <p className="text-xs text-gray-500 mb-3">Download the template, fill in values offline, then upload to import.</p>
+            <input
+              ref={templateFileRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleTemplateUpload(file);
+                e.target.value = "";
+              }}
+            />
+            <div className="mt-auto flex flex-wrap gap-2">
+              <a
+                href={`${API}/api/v1/admin/lab-template`}
+                download
+                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download template
+              </a>
+              <button
+                onClick={() => templateFileRef.current?.click()}
+                disabled={extracting || uploadingTemplate}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-zen-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-zen-800 disabled:opacity-50 transition-colors"
+              >
+                {uploadingTemplate ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                {uploadingTemplate ? "Uploading…" : "Upload filled template"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-5 flex flex-col items-center justify-center text-center">
+            <p className="text-xs text-gray-400">Excel template available for Blood Report only.</p>
+            <p className="text-[11px] text-gray-300 mt-1">Use Option 1, or fill values manually below.</p>
+          </div>
+        )}
       </div>
 
       {/* Key Findings */}
