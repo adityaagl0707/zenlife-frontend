@@ -2,9 +2,12 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, FileText, Share2, CheckCircle2, Loader2, Leaf } from "lucide-react";
+import { ArrowLeft, Download, FileText, Share2, CheckCircle2, Loader2, Leaf, Copy, Check } from "lucide-react";
 import { api, Report } from "@/lib/api";
-import { isLoggedIn } from "@/lib/auth";
+import { isLoggedIn, getToken } from "@/lib/auth";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "https://zenlife.health").replace(/\/api\/v1\/?$/, "");
+const BASE = `${API_URL}/api/v1`;
 
 const DOWNLOADS = [
   {
@@ -12,23 +15,47 @@ const DOWNLOADS = [
     description: "Complete scan report with all findings, organ scores, and AI insights",
     icon: FileText,
     tag: "Recommended",
-    size: "~4.2 MB",
+    path: "full.pdf",
+    fallbackName: "ZenReport.pdf",
   },
   {
     title: "Executive Summary",
     description: "One-page summary of your ZenScore and top health priorities",
     icon: FileText,
     tag: "Quick share",
-    size: "~0.8 MB",
+    path: "summary.pdf",
+    fallbackName: "ZenReport_Summary.pdf",
   },
   {
     title: "Lab Data (CSV)",
     description: "Raw biomarker and blood test values for your own records or physician",
     icon: FileText,
     tag: "Data export",
-    size: "~0.1 MB",
+    path: "lab-data.csv",
+    fallbackName: "ZenReport_LabData.csv",
   },
 ];
+
+async function authedDownload(reportId: number, path: string, fallbackName: string) {
+  const token = getToken();
+  const res = await fetch(`${BASE}/reports/${reportId}/download/${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Download failed (HTTP ${res.status})`);
+  // Pull filename from Content-Disposition if present
+  const cd = res.headers.get("Content-Disposition") || "";
+  const m = cd.match(/filename="?([^";]+)"?/i);
+  const filename = m?.[1] || fallbackName;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
 
 export default function DownloadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -38,16 +65,74 @@ export default function DownloadPage({ params }: { params: Promise<{ id: string 
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloaded, setDownloaded] = useState<Set<number>>(new Set());
+  const [downloading, setDownloading] = useState<Set<number>>(new Set());
+
+  // Secure share link state
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareExpires, setShareExpires] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn()) { router.push("/login"); return; }
     api.reports.get(reportId).then(setReport).finally(() => setLoading(false));
   }, [reportId, router]);
 
-  function simulateDownload(index: number) {
-    setTimeout(() => {
+  async function handleDownload(index: number) {
+    if (downloading.has(index)) return;
+    const item = DOWNLOADS[index];
+    setDownloading((d) => new Set([...d, index]));
+    try {
+      await authedDownload(reportId, item.path, item.fallbackName);
       setDownloaded((d) => new Set([...d, index]));
-    }, 1200);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Download failed. Please try again.");
+    } finally {
+      setDownloading((d) => {
+        const next = new Set(d);
+        next.delete(index);
+        return next;
+      });
+    }
+  }
+
+  async function handleGenerateShare() {
+    setShareLoading(true);
+    setShareError("");
+    setCopied(false);
+    try {
+      const token = getToken();
+      const res = await fetch(`${BASE}/reports/${reportId}/share-link`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setShareUrl(data.url);
+      setShareExpires(data.expires_at);
+    } catch (e: unknown) {
+      setShareError(e instanceof Error ? e.message : "Could not create share link");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function handleCopyShare() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // fallback: select the input
+    }
   }
 
   return (
@@ -95,6 +180,7 @@ export default function DownloadPage({ params }: { params: Promise<{ id: string 
                 {DOWNLOADS.map((item, i) => {
                   const Icon = item.icon;
                   const done = downloaded.has(i);
+                  const isLoading = downloading.has(i);
                   return (
                     <div key={i} className="flex items-center gap-5 px-6 py-5 border-b border-black/5 last:border-0">
                       <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-cream-dark">
@@ -108,18 +194,22 @@ export default function DownloadPage({ params }: { params: Promise<{ id: string 
                           </span>
                         </div>
                         <p className="mt-0.5 text-[13px] text-gray-500">{item.description}</p>
-                        <p className="mt-0.5 text-[11px] text-gray-400">{item.size}</p>
                       </div>
                       <button
-                        onClick={() => simulateDownload(i)}
+                        onClick={() => handleDownload(i)}
+                        disabled={isLoading}
                         className={
-                          done
-                            ? "flex items-center gap-1.5 rounded-full bg-emerald-50 px-4 py-2 text-[12px] font-bold text-emerald-600"
+                          isLoading
+                            ? "flex items-center gap-1.5 rounded-full bg-zen-100 px-4 py-2 text-[12px] font-bold text-zen-700"
+                            : done
+                            ? "flex items-center gap-1.5 rounded-full bg-emerald-50 px-4 py-2 text-[12px] font-bold text-emerald-600 hover:bg-emerald-100 transition-colors"
                             : "flex items-center gap-1.5 rounded-full bg-zen-900 px-4 py-2 text-[12px] font-bold text-white hover:bg-zen-800 transition-colors"
                         }
                       >
-                        {done ? (
-                          <><CheckCircle2 className="h-4 w-4" /> Saved</>
+                        {isLoading ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Generating…</>
+                        ) : done ? (
+                          <><CheckCircle2 className="h-4 w-4" /> Download again</>
                         ) : (
                           <><Download className="h-4 w-4" /> Download</>
                         )}
@@ -138,11 +228,50 @@ export default function DownloadPage({ params }: { params: Promise<{ id: string 
                   <div className="flex-1">
                     <h2 className="font-display text-[1.25rem] leading-snug text-white">Share with your doctor.</h2>
                     <p className="mt-1.5 text-[13px] text-white/60 leading-relaxed">
-                      Generate a secure, time-limited link to share your ZenReport with your physician.
+                      Generate a secure, time-limited link valid for 7 days. Anyone with the link can view this report.
                     </p>
-                    <button className="mt-4 rounded-full border border-white/20 px-6 py-2.5 text-[12px] font-semibold text-white hover:border-white/40 transition-colors">
-                      Generate Secure Link
-                    </button>
+
+                    {!shareUrl ? (
+                      <button
+                        onClick={handleGenerateShare}
+                        disabled={shareLoading}
+                        className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 px-6 py-2.5 text-[12px] font-semibold text-white hover:border-white/40 transition-colors disabled:opacity-50"
+                      >
+                        {shareLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating…</> : "Generate Secure Link"}
+                      </button>
+                    ) : (
+                      <div className="mt-4 space-y-2">
+                        <div className="flex gap-2 items-center rounded-xl bg-white/10 px-3 py-2">
+                          <input
+                            readOnly
+                            value={shareUrl}
+                            onClick={(e) => (e.target as HTMLInputElement).select()}
+                            className="flex-1 bg-transparent text-[12px] text-white/90 outline-none truncate"
+                          />
+                          <button
+                            onClick={handleCopyShare}
+                            className="flex-shrink-0 inline-flex items-center gap-1 rounded-full bg-white text-zen-900 px-3 py-1 text-[11px] font-bold hover:bg-white/90 transition-colors"
+                          >
+                            {copied ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
+                          </button>
+                        </div>
+                        {shareExpires && (
+                          <p className="text-[11px] text-white/50">
+                            Expires {new Date(shareExpires).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        )}
+                        <button
+                          onClick={() => { setShareUrl(null); setShareExpires(null); }}
+                          className="text-[11px] text-white/60 hover:text-white underline"
+                        >
+                          Regenerate link
+                        </button>
+                      </div>
+                    )}
+
+                    {shareError && (
+                      <p className="mt-3 text-[12px] text-red-200 bg-red-500/20 rounded-lg px-3 py-2">{shareError}</p>
+                    )}
                   </div>
                 </div>
               </div>
