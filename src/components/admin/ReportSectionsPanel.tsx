@@ -36,6 +36,27 @@ type ParamDef = { name: string; unit: string; normal: string };
 type ParamValue = { value: string; severity: string; clinical_findings: string; recommendations: string };
 type SectionData = { key_findings: string; parameters: Record<string, ParamValue>; param_definitions: ParamDef[] };
 
+// CBC differential twin pairs — same biological measurement reported as both
+// percentage AND absolute count. The absolute count is the clinically actionable
+// value (used for diagnoses like neutropenia); the % shows relative composition.
+// We render them as a single combined row, but keep both stored in the DB so
+// findings / lab CSV exports remain complete.
+//   key   = secondary param (%-form)
+//   value = primary param (absolute count, drives the row's severity)
+const CBC_TWINS: Record<string, string> = {
+  "Basophils":               "Basophils - Count",
+  "Eosinophils":             "Eosinophils - Count",
+  "Lymphocytes":             "Lymphocytes - Count",
+  "Monocytes":               "Monocytes - Count",
+  "Neutrophils":             "Neutrophils - Count",
+  "Immature Granulocytes %": "Immature Granulocytes",
+  "Nucleated RBC %":         "Nucleated RBC",
+};
+// Inverse: primary name → secondary name
+const TWIN_SECONDARY: Record<string, string> = Object.fromEntries(
+  Object.entries(CBC_TWINS).map(([sec, prim]) => [prim, sec])
+);
+
 function SeverityBadge({ sev }: { sev: string }) {
   return (
     <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase border", SEVERITY_COLORS[sev] || SEVERITY_COLORS.normal)}>
@@ -157,6 +178,108 @@ function ParamRow({
   );
 }
 
+// Combined CBC-twin row: shows both %-form and absolute-count side by side.
+// Severity & clinical findings/recommendations are shared (stored on the
+// primary/count param). Both inputs save into their respective DB params.
+function ParamPairRow({
+  primaryDef, secondaryDef,
+  primaryVal, secondaryVal,
+  onPrimaryChange, onSecondaryChange,
+}: {
+  primaryDef: ParamDef; secondaryDef: ParamDef;
+  primaryVal: ParamValue; secondaryVal: ParamValue;
+  onPrimaryChange: (v: ParamValue) => void;
+  onSecondaryChange: (v: ParamValue) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const hasAny = !!(primaryVal.value?.trim() || secondaryVal.value?.trim());
+  const sev = !hasAny ? "pending" : (primaryVal.severity || "normal");
+  const borderColor = sev === "critical" ? "border-red-200" : sev === "major" ? "border-orange-200" : sev === "minor" ? "border-yellow-200" : "border-gray-100";
+
+  // Display name without the suffix (e.g. "Neutrophils - Count" → "Neutrophils")
+  const baseName = primaryDef.name.replace(/\s*[-–]?\s*Count\s*$/i, "").trim();
+
+  return (
+    <div className={cn("rounded-xl border mb-2 overflow-hidden", borderColor)}>
+      <div className={cn("flex items-center gap-3 px-4 py-3", !hasAny ? "bg-gray-50" : "bg-white")}>
+        <div className="flex-1 min-w-0">
+          <p className={cn("text-sm font-semibold truncate", !hasAny ? "text-gray-400" : "text-gray-800")}>{baseName}</p>
+          <p className="text-xs text-gray-400">% & absolute count · Normal: {secondaryDef.normal} / {primaryDef.normal} {primaryDef.unit}</p>
+        </div>
+        {/* % input */}
+        <div className="flex flex-col items-center">
+          <input
+            type="text"
+            value={secondaryVal.value || ""}
+            onChange={(e) => onSecondaryChange({ ...secondaryVal, value: e.target.value })}
+            placeholder="%"
+            className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-zen-500"
+          />
+          <span className="text-[9px] text-gray-400 mt-0.5">%</span>
+        </div>
+        {/* count input */}
+        <div className="flex flex-col items-center">
+          <input
+            type="text"
+            value={primaryVal.value || ""}
+            onChange={(e) => onPrimaryChange({ ...primaryVal, value: e.target.value })}
+            placeholder="count"
+            className="w-24 rounded-lg border border-gray-200 px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-zen-500"
+          />
+          <span className="text-[9px] text-gray-400 mt-0.5">{primaryDef.unit}</span>
+        </div>
+        {!hasAny ? (
+          <span className="rounded-lg border border-gray-200 bg-gray-100 px-2 py-1.5 text-xs font-semibold text-gray-400 w-[90px] text-center">⏳ pending</span>
+        ) : (
+          <select
+            value={primaryVal.severity || "normal"}
+            onChange={(e) => {
+              onPrimaryChange({ ...primaryVal, severity: e.target.value });
+              // mirror severity to the secondary so both findings stay in sync
+              onSecondaryChange({ ...secondaryVal, severity: e.target.value });
+            }}
+            className={cn("rounded-lg border px-2 py-1.5 text-xs font-semibold focus:outline-none cursor-pointer", SEVERITY_COLORS[primaryVal.severity || "normal"] || SEVERITY_COLORS.normal)}
+            title="Click to override"
+          >
+            {["normal", "minor", "major", "critical"].map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        )}
+        <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-600">
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+      </div>
+      {expanded && (
+        <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 space-y-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Clinical Findings</p>
+            <textarea
+              value={primaryVal.clinical_findings || ""}
+              onChange={(e) => {
+                onPrimaryChange({ ...primaryVal, clinical_findings: e.target.value });
+                onSecondaryChange({ ...secondaryVal, clinical_findings: e.target.value });
+              }}
+              rows={2}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zen-500 resize-none"
+            />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Recommendations</p>
+            <textarea
+              value={primaryVal.recommendations || ""}
+              onChange={(e) => {
+                onPrimaryChange({ ...primaryVal, recommendations: e.target.value });
+                onSecondaryChange({ ...secondaryVal, recommendations: e.target.value });
+              }}
+              rows={2}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zen-500 resize-none"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SectionPanel({
   reportId,
   sectionType,
@@ -190,18 +313,26 @@ function SectionPanel({
   const [search, setSearch] = useState("");
   const templateFileRef = useRef<HTMLInputElement>(null);
 
-  const filteredDefs = defs.filter((d) => {
-    const hasValue = !!(params[d.name]?.value?.trim());
+  // Hide secondary CBC twins (their %-form) from the def list since the
+  // primary (count) row will render both inputs together.
+  const visibleDefs = defs.filter((d) => !(d.name in CBC_TWINS));
+
+  const filteredDefs = visibleDefs.filter((d) => {
+    const secondaryName = TWIN_SECONDARY[d.name];
+    const hasValue = !!(params[d.name]?.value?.trim() || (secondaryName && params[secondaryName]?.value?.trim()));
     const effectiveSev = hasValue ? (params[d.name]?.severity || "normal") : "pending";
     const matchSev = filterSev === "all" || effectiveSev === filterSev;
-    const matchSearch = d.name.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = d.name.toLowerCase().includes(search.toLowerCase()) ||
+                        (secondaryName && secondaryName.toLowerCase().includes(search.toLowerCase()));
     return matchSev && matchSearch;
   });
 
-  // Counts per severity — only count parameters that have a value (skip pending)
+  // Counts per severity — paired CBC twins count as ONE row (the primary).
   const counts = { critical: 0, major: 0, minor: 0, normal: 0 };
-  for (const d of defs) {
-    if (!params[d.name]?.value?.trim()) continue; // pending — exclude from C/M/m/N counts
+  for (const d of visibleDefs) {
+    const secondaryName = TWIN_SECONDARY[d.name];
+    const hasValue = !!(params[d.name]?.value?.trim() || (secondaryName && params[secondaryName]?.value?.trim()));
+    if (!hasValue) continue;
     const s = (params[d.name]?.severity || "normal") as keyof typeof counts;
     counts[s] = (counts[s] || 0) + 1;
   }
@@ -324,7 +455,15 @@ function SectionPanel({
     }
   }
 
-  const filledCount = defs.filter((d) => params[d.name]?.value && params[d.name]?.value !== "Not Found").length;
+  // Pair-aware filled / total: a CBC twin pair counts as 1 row.
+  const filledCount = visibleDefs.reduce((acc, d) => {
+    const sec = TWIN_SECONDARY[d.name];
+    const pv = params[d.name]?.value;
+    const sv = sec ? params[sec]?.value : undefined;
+    const has = (v?: string) => !!v && v !== "Not Found";
+    return acc + (has(pv) || has(sv) ? 1 : 0);
+  }, 0);
+  const totalCount = visibleDefs.length;
 
   return (
     <div className="space-y-5">
@@ -417,7 +556,7 @@ function SectionPanel({
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <p className="text-sm font-semibold text-gray-700">
-              Parameters — {filledCount}/{defs.length} filled
+              Parameters — {filledCount}/{totalCount} filled
             </p>
             <div className="flex gap-3 mt-1 text-xs flex-wrap">
               {(["critical", "major", "minor", "normal"] as const).map((s) =>
@@ -429,7 +568,7 @@ function SectionPanel({
               )}
               {defs.length - filledCount > 0 && (
                 <span className="font-semibold text-gray-400">
-                  ⏳ {defs.length - filledCount} pending
+                  ⏳ {totalCount - filledCount} pending
                 </span>
               )}
               {filledCount === 0 && <span className="text-gray-400 italic">No values entered yet</span>}
@@ -462,14 +601,31 @@ function SectionPanel({
           {filteredDefs.length === 0 ? (
             <p className="text-center text-sm text-gray-400 py-8">No parameters match your filter.</p>
           ) : (
-            filteredDefs.map((d) => (
-              <ParamRow
-                key={d.name}
-                def={d}
-                val={params[d.name] || { value: "", severity: "normal", clinical_findings: "", recommendations: "" }}
-                onChange={(v) => setParams((prev) => ({ ...prev, [d.name]: v }))}
-              />
-            ))
+            filteredDefs.map((d) => {
+              const secondaryName = TWIN_SECONDARY[d.name];
+              const secondaryDef = secondaryName ? defs.find((x) => x.name === secondaryName) : null;
+              if (secondaryDef) {
+                return (
+                  <ParamPairRow
+                    key={d.name}
+                    primaryDef={d}
+                    secondaryDef={secondaryDef}
+                    primaryVal={params[d.name] || { value: "", severity: "normal", clinical_findings: "", recommendations: "" }}
+                    secondaryVal={params[secondaryName] || { value: "", severity: "normal", clinical_findings: "", recommendations: "" }}
+                    onPrimaryChange={(v) => setParams((prev) => ({ ...prev, [d.name]: v }))}
+                    onSecondaryChange={(v) => setParams((prev) => ({ ...prev, [secondaryName]: v }))}
+                  />
+                );
+              }
+              return (
+                <ParamRow
+                  key={d.name}
+                  def={d}
+                  val={params[d.name] || { value: "", severity: "normal", clinical_findings: "", recommendations: "" }}
+                  onChange={(v) => setParams((prev) => ({ ...prev, [d.name]: v }))}
+                />
+              );
+            })
           )}
         </div>
       </div>
@@ -643,16 +799,27 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
     </div>
   );
 
-  // Compute filled counts per section for tab badges
+  // Compute filled / total per section — paired CBC twins are treated as ONE
+  // logical row in both numerator and denominator so the displayed count
+  // matches what the user sees in the parameter list.
   const sectionFillCounts: Record<string, number> = {};
+  const sectionTotalCounts: Record<string, number> = {};
   for (const st of visibleSections) {
     const data = allSections[st];
-    sectionFillCounts[st] = data
-      ? Object.values(data.parameters).filter((v) => (v as ParamValue).value && (v as ParamValue).value !== "Not Found").length
-      : 0;
+    if (!data) { sectionFillCounts[st] = 0; sectionTotalCounts[st] = 0; continue; }
+    const params = data.parameters;
+    const visibleDefs = data.param_definitions.filter((d) => !(d.name in CBC_TWINS));
+    sectionTotalCounts[st] = visibleDefs.length;
+    sectionFillCounts[st] = visibleDefs.reduce((acc, d) => {
+      const sec = TWIN_SECONDARY[d.name];
+      const pv = (params[d.name] as ParamValue | undefined)?.value;
+      const sv = sec ? (params[sec] as ParamValue | undefined)?.value : undefined;
+      const has = (v?: string) => !!v && v !== "Not Found";
+      return acc + (has(pv) || has(sv) ? 1 : 0);
+    }, 0);
   }
   const grandFilled = visibleSections.reduce((s, st) => s + sectionFillCounts[st], 0);
-  const grandTotal = visibleSections.reduce((s, st) => s + (allSections[st]?.param_definitions?.length || 0), 0);
+  const grandTotal = visibleSections.reduce((s, st) => s + sectionTotalCounts[st], 0);
   const grandPct = grandTotal > 0 ? Math.round((grandFilled / grandTotal) * 100) : 0;
 
   return (
@@ -683,7 +850,7 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
         {visibleSections.map((st) => {
           const m = SECTION_META[st];
           const filled = sectionFillCounts[st];
-          const total = allSections[st]?.param_definitions?.length || 0;
+          const total = sectionTotalCounts[st];
           return (
             <button
               key={st}

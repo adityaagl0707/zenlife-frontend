@@ -212,12 +212,19 @@ const ALIASES: Record<string, string> = {
   "crp": "hs-crp",
   "c reactive protein": "hs-crp",
   "c-reactive protein": "hs-crp",
-  // CBC differential — both percentage names and absolute count
-  "lymph %": "lymphocytes",
-  "lymphocyte %": "lymphocytes",
-  "lymphocytes %": "lymphocytes",
-  "lymphocyte percentage": "lymphocytes",
-  "lymphocytes - count": "lymphocytes",
+  // CBC differential twin pairs — % and absolute count are the SAME measurement.
+  // Collapse to the absolute-count canonical so a pair counts once in organ totals.
+  "lymph %": "lymphocytes - count",
+  "lymphocyte %": "lymphocytes - count",
+  "lymphocytes %": "lymphocytes - count",
+  "lymphocyte percentage": "lymphocytes - count",
+  "lymphocytes": "lymphocytes - count",
+  "neutrophils": "neutrophils - count",
+  "monocytes": "monocytes - count",
+  "eosinophils": "eosinophils - count",
+  "basophils": "basophils - count",
+  "immature granulocytes %": "immature granulocytes",
+  "nucleated rbc %": "nucleated rbc",
   // Lipids
   "non hdl cholesterol": "non-hdl cholesterol",
   "ldl/hdl ratio": "hdl/ldl ratio",

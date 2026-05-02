@@ -4,6 +4,59 @@ import { useState } from "react";
 import { Finding, OrganScore } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+// CBC differential twins — % and absolute count are the same biological
+// measurement. Merge them into one card so the patient doesn't see what
+// looks like duplicate rows. Map: secondary (%-form) → primary (count-form).
+const CBC_PAIRS: Record<string, string> = {
+  "basophils":               "basophils - count",
+  "eosinophils":             "eosinophils - count",
+  "lymphocytes":             "lymphocytes - count",
+  "monocytes":               "monocytes - count",
+  "neutrophils":             "neutrophils - count",
+  "immature granulocytes %": "immature granulocytes",
+  "nucleated rbc %":         "nucleated rbc",
+};
+const PAIR_PRIMARIES = new Set(Object.values(CBC_PAIRS));
+
+function mergePairs(findings: Finding[]): Finding[] {
+  const byKey = new Map<string, Finding>();
+  for (const f of findings) byKey.set((f.name || "").toLowerCase().trim(), f);
+  const out: Finding[] = [];
+  const consumed = new Set<string>();
+  for (const f of findings) {
+    const key = (f.name || "").toLowerCase().trim();
+    if (consumed.has(key)) continue;
+    const primaryKey = CBC_PAIRS[key];                 // is f a secondary?
+    const secondaryKey = Object.keys(CBC_PAIRS).find((k) => CBC_PAIRS[k] === key); // is f a primary?
+    if (primaryKey && byKey.has(primaryKey)) {
+      const primary = byKey.get(primaryKey)!;
+      const merged: Finding = {
+        ...primary,
+        // Combine display value: "60% · 3.2 ×10³/µL"
+        value: `${f.value || "—"}% · ${primary.value || "—"}${primary.unit ? ` ${primary.unit}` : ""}`,
+        unit: "",
+        normal_range: `${f.normal_range || "—"} (%) · ${primary.normal_range || "—"} (count)`,
+      };
+      out.push(merged);
+      consumed.add(key); consumed.add(primaryKey);
+    } else if (secondaryKey && byKey.has(secondaryKey)) {
+      const secondary = byKey.get(secondaryKey)!;
+      const merged: Finding = {
+        ...f,
+        value: `${secondary.value || "—"}% · ${f.value || "—"}${f.unit ? ` ${f.unit}` : ""}`,
+        unit: "",
+        normal_range: `${secondary.normal_range || "—"} (%) · ${f.normal_range || "—"} (count)`,
+      };
+      out.push(merged);
+      consumed.add(key); consumed.add(secondaryKey);
+    } else {
+      out.push(f);
+      consumed.add(key);
+    }
+  }
+  return out;
+}
+
 // ── Severity tokens ────────────────────────────────────────────────────────
 
 const SEV = {
@@ -219,11 +272,14 @@ const TABS = ["all", "critical", "major", "minor", "normal"] as const;
 export default function FindingsPanel({ organ, findings, onClose }: Props) {
   const [filter, setFilter] = useState<typeof TABS[number]>("all");
 
+  // Merge CBC twin pairs (% + absolute count) into single cards.
+  const merged = mergePairs(findings);
+
   const counts = Object.fromEntries(
-    TABS.map((s) => [s, s === "all" ? findings.length : findings.filter((f) => f.severity?.toLowerCase() === s).length])
+    TABS.map((s) => [s, s === "all" ? merged.length : merged.filter((f) => f.severity?.toLowerCase() === s).length])
   ) as Record<typeof TABS[number], number>;
 
-  const filtered = filter === "all" ? findings : findings.filter((f) => f.severity?.toLowerCase() === filter);
+  const filtered = filter === "all" ? merged : merged.filter((f) => f.severity?.toLowerCase() === filter);
 
   const title = organ ? organ.organ_name : "All Findings";
 
