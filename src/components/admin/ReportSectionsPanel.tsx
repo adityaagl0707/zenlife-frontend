@@ -815,31 +815,50 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
   // Cross-section severity tally — feeds the strip in the header so the
   // operator sees at a glance how many criticals / majors / etc. exist
   // across the whole report.
+  //
+  // Some param names exist in BOTH the MRI and USG sections (e.g. Liver
+  // Parenchyma, Adrenals, Pelvic structures) because either modality can
+  // capture them. We dedupe by name when computing grandSev / grandTotal /
+  // grandFilled so the totals match the patient-facing Findings collection
+  // which stores one row per name.
   const grandSev = { critical: 0, major: 0, minor: 0, normal: 0, pending: 0 };
+  const seenAcrossSections = new Set<string>();
+  let dedupedTotal = 0;
+  let dedupedFilled = 0;
   for (const st of visibleSections) {
     const data = allSections[st];
     if (!data) { sectionFillCounts[st] = 0; sectionTotalCounts[st] = 0; continue; }
     const params = data.parameters;
     const visibleDefs = data.param_definitions.filter((d) => !(d.name in CBC_TWINS));
+    // Per-section counters keep the sidebar (X/Y) accurate inside a section.
     sectionTotalCounts[st] = visibleDefs.length;
     sectionFillCounts[st] = visibleDefs.reduce((acc, d) => {
       const sec = TWIN_SECONDARY[d.name];
       const pv = (params[d.name] as ParamValue | undefined)?.value;
       const sv = sec ? (params[sec] as ParamValue | undefined)?.value : undefined;
-      const filled = isFilledValue(pv) || isFilledValue(sv);
+      return acc + (isFilledValue(pv) || isFilledValue(sv) ? 1 : 0);
+    }, 0);
+    // Cross-section dedupe for the global severity strip
+    for (const d of visibleDefs) {
+      const key = d.name.toLowerCase().trim();
+      if (seenAcrossSections.has(key)) continue;
+      seenAcrossSections.add(key);
+      dedupedTotal++;
+      const sec = TWIN_SECONDARY[d.name];
+      const primary = params[d.name] as ParamValue | undefined;
+      const secondary = sec ? (params[sec] as ParamValue | undefined) : undefined;
+      const filled = isFilledValue(primary?.value) || isFilledValue(secondary?.value);
       if (filled) {
-        const primary = params[d.name] as ParamValue | undefined;
-        const secondary = sec ? (params[sec] as ParamValue | undefined) : undefined;
+        dedupedFilled++;
         const sev = (primary?.severity || secondary?.severity || "normal") as keyof typeof grandSev;
         if (sev in grandSev) grandSev[sev]++;
       } else {
         grandSev.pending++;
       }
-      return acc + (filled ? 1 : 0);
-    }, 0);
+    }
   }
-  const grandFilled = visibleSections.reduce((s, st) => s + sectionFillCounts[st], 0);
-  const grandTotal = visibleSections.reduce((s, st) => s + sectionTotalCounts[st], 0);
+  const grandFilled = dedupedFilled;
+  const grandTotal = dedupedTotal;
   const grandPct = grandTotal > 0 ? Math.round((grandFilled / grandTotal) * 100) : 0;
 
   return (
