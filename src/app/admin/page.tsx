@@ -855,6 +855,21 @@ function BodyAgeSection({ reportId }: { reportId: number }) {
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com/api/v1";
 
+  // Hydrate from the persisted body age doc on mount so it survives
+  // remounts (resetCounter bump, switching reports, page reload).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/admin/reports/${reportId}/body-age`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data && data.zen_age != null) setResult(data as BodyAgeResult);
+      } catch { /* ignore – user can still click Calculate */ }
+    })();
+    return () => { cancelled = true; };
+  }, [reportId, API_BASE]);
+
   async function calculate() {
     setLoading(true);
     setError("");
@@ -1407,6 +1422,9 @@ export default function AdminPage() {
                       await api(`/admin/reports/${selectedReportId}/generate-priorities`, "POST");
                       setGenerated(true);
                       loadReportDetail(selectedReportId);
+                      // Force BodyAgeSection to remount so its mount-effect
+                      // re-fetches the freshly-saved body age document.
+                      setResetCounter((c) => c + 1);
                     } catch (e: unknown) { alert(e instanceof Error ? e.message : "Generation failed"); }
                     finally { setGenerating(false); }
                   }
