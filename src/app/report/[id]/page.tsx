@@ -423,16 +423,22 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     );
   }
 
-  const { critical = 0, major = 0, minor = 0, normal = 0 } = report.finding_counts ?? {};
-  // Count by what the drawer will actually render: post-CBC-merge, with
-  // pending rows filtered out. Keeps the "All N findings" button label in
-  // sync with the drawer header — no more hardcoded-feeling mismatch.
+  // Single source of truth for every count on this page: the actual findings
+  // array, post-pending-filter, post-CBC-merge. Backend `finding_counts`
+  // counts raw rows (CBC twins separately, pending placeholders included)
+  // which mismatched the drawer + button — so we derive everything in one
+  // pass here so all four tiles + button + organ cards reconcile exactly.
   const visibleFindings = findings.filter((f) => {
     const v = (f.value ?? "").trim().toLowerCase();
     const sev = (f.severity || "").toLowerCase();
     return v && !["—", "-", "n/a", "na", "not found", "not measured"].includes(v) && sev !== "pending";
   });
-  const totalFindings = mergePairs(visibleFindings).length;
+  const mergedFindings = mergePairs(visibleFindings);
+  const totalFindings = mergedFindings.length;
+  const critical = mergedFindings.filter((f) => f.severity?.toLowerCase() === "critical").length;
+  const major    = mergedFindings.filter((f) => f.severity?.toLowerCase() === "major").length;
+  const minor    = mergedFindings.filter((f) => f.severity?.toLowerCase() === "minor").length;
+  const normal   = mergedFindings.filter((f) => f.severity?.toLowerCase() === "normal").length;
   const overallSev = report.overall_severity?.toLowerCase() ?? "normal";
 
   const formatDate = (d?: string) =>
