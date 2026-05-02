@@ -2,7 +2,7 @@
 import { Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OrganScore, Finding } from "@/lib/api";
-import { computeOrganCounts, organApplicableTotal, organIgnoredCount } from "@/lib/organParamMap";
+import { computeOrganCounts } from "@/lib/organParamMap";
 
 const SEV_TOP: Record<string, string> = {
   critical: "bg-red-500",
@@ -33,12 +33,12 @@ const SEV_DOT: Record<string, string> = {
 export default function OrganGrid({
   organs,
   findings = [],
-  ignoredParams = [],
-  patientGender,
   onSelect,
 }: {
   organs: OrganScore[];
   findings?: Finding[];
+  /** Kept for API compatibility — no longer used now that the denominator
+   *  is the count of imported (non-pending) findings. */
   ignoredParams?: string[];
   patientGender?: string;
   onSelect: (organ: OrganScore) => void;
@@ -48,13 +48,12 @@ export default function OrganGrid({
       {organs.map((organ) => {
         const s = organ.severity?.toLowerCase() ?? "normal";
         const counts = computeOrganCounts(organ.organ_name, findings);
-        const totalParams = Math.max(
-          0,
-          organApplicableTotal(organ.organ_name, patientGender)
-            - organIgnoredCount(organ.organ_name, ignoredParams)
-        );
+        // Pending params (no Finding row yet) are excluded from the patient
+        // view: the denominator is what's actually been imported, not the
+        // theoretical applicable total. Operators see pending in admin.
         const imported = counts.critical + counts.major + counts.minor + counts.normal;
         const abnormal = counts.critical + counts.major + counts.minor;
+        const totalParams = imported;
         const allNormal = imported > 0 && abnormal === 0;
         const noData = imported === 0;
 

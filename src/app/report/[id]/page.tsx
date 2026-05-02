@@ -27,7 +27,7 @@ import { api, Report, OrganScore, Finding, HealthPriority, BodyAge } from "@/lib
 import { isLoggedIn } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import OrganGrid from "@/components/report/OrganGrid";
-import FindingsPanel from "@/components/report/FindingsPanel";
+import FindingsPanel, { mergePairs } from "@/components/report/FindingsPanel";
 import { ORGAN_PARAM_MAP } from "@/lib/organParamMap";
 import ZenAgeCard from "@/components/report/ZenAgeCard";
 
@@ -330,14 +330,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   function openOrganPanel(organ: OrganScore) {
     const params = new Set((ORGAN_PARAM_MAP[organ.organ_name] ?? []).map((p) => p.toLowerCase()));
     // Filter findings to only those belonging to this organ's parameter list
-    const organFindings = findings.filter((f) => params.has(f.name?.toLowerCase().trim() ?? ""));
+    const organFindings = visibleFindings.filter((f) => params.has(f.name?.toLowerCase().trim() ?? ""));
     setPanelOrgan(organ);
     setPanelFindings(organFindings);   // show only matched findings — never fall back to all
     setPanelOpen(true);
   }
 
   function openSeverityPanel(sev: string) {
-    const sevFindings = findings.filter((f) => f.severity?.toLowerCase() === sev);
+    const sevFindings = visibleFindings.filter((f) => f.severity?.toLowerCase() === sev);
     if (sevFindings.length) {
       setPanelOrgan(null);
       setPanelFindings(sevFindings);
@@ -346,7 +346,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   }
 
   function openTestPanel(testKey: string, label: string, icon: string) {
-    const testFindings = findings.filter((f) => f.test_type?.toLowerCase() === testKey);
+    const testFindings = visibleFindings.filter((f) => f.test_type?.toLowerCase() === testKey);
     if (!testFindings.length) return;
     // Construct a fake "organ" so FindingsPanel shows the test name in its
     // header — keeps the drawer component contract unchanged.
@@ -424,7 +424,15 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   }
 
   const { critical = 0, major = 0, minor = 0, normal = 0 } = report.finding_counts ?? {};
-  const totalFindings = critical + major + minor + normal;
+  // Count by what the drawer will actually render: post-CBC-merge, with
+  // pending rows filtered out. Keeps the "All N findings" button label in
+  // sync with the drawer header — no more hardcoded-feeling mismatch.
+  const visibleFindings = findings.filter((f) => {
+    const v = (f.value ?? "").trim().toLowerCase();
+    const sev = (f.severity || "").toLowerCase();
+    return v && !["—", "-", "n/a", "na", "not found", "not measured"].includes(v) && sev !== "pending";
+  });
+  const totalFindings = mergePairs(visibleFindings).length;
   const overallSev = report.overall_severity?.toLowerCase() ?? "normal";
 
   const formatDate = (d?: string) =>
@@ -590,7 +598,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => { setPanelOrgan(null); setPanelFindings(findings); setPanelOpen(true); }}
+                  onClick={() => { setPanelOrgan(null); setPanelFindings(visibleFindings); setPanelOpen(true); }}
                   className="inline-flex items-center gap-1.5 rounded-full bg-zen-900 px-4 py-2 text-[11px] font-bold text-white hover:bg-zen-800 transition-colors"
                 >
                   <Activity className="h-3 w-3" /> All {totalFindings} Findings
@@ -656,14 +664,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             subtitle="Click any organ card to explore detailed parameter findings"
             action={
               <button
-                onClick={() => { setPanelOrgan(null); setPanelFindings(findings); setPanelOpen(true); }}
+                onClick={() => { setPanelOrgan(null); setPanelFindings(visibleFindings); setPanelOpen(true); }}
                 className="flex-shrink-0 flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-4 py-2 text-[12px] font-semibold text-gray-600 hover:bg-cream transition-colors"
               >
                 All {totalFindings} findings <ChevronRight className="h-3.5 w-3.5" />
               </button>
             }
           />
-          <OrganGrid organs={organs} findings={findings} ignoredParams={report.ignored_params || []} patientGender={report.patient_gender} onSelect={openOrganPanel} />
+          <OrganGrid organs={organs} findings={visibleFindings} onSelect={openOrganPanel} />
         </section>
 
         {/* ── Findings by Severity ────────────────────────────────────── */}
@@ -704,7 +712,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           ];
           // Roll up findings per test type (only render rows that have data)
           const rows = TEST_CONFIG.map((t) => {
-            const ts = findings.filter((f) => f.test_type?.toLowerCase() === t.key);
+            const ts = visibleFindings.filter((f) => f.test_type?.toLowerCase() === t.key);
             const c = { critical: 0, major: 0, minor: 0, normal: 0 } as Record<string, number>;
             for (const f of ts) {
               const sev = (f.severity || "normal").toLowerCase();

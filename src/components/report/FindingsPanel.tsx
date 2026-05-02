@@ -18,7 +18,10 @@ const CBC_PAIRS: Record<string, string> = {
 };
 const PAIR_PRIMARIES = new Set(Object.values(CBC_PAIRS));
 
-function mergePairs(findings: Finding[]): Finding[] {
+// Exported so the report header can show "All N findings" using the same
+// post-merge count the drawer actually displays — keeps the button label
+// and the drawer header in lockstep.
+export function mergePairs(findings: Finding[]): Finding[] {
   const byKey = new Map<string, Finding>();
   for (const f of findings) byKey.set((f.name || "").toLowerCase().trim(), f);
   const out: Finding[] = [];
