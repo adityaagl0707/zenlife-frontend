@@ -168,9 +168,9 @@ export default function HomePage() {
                 <div className="space-y-3 mb-6">
                   {[
                     { organ: "Heart Health", score: 42, sev: "critical", bar: "bg-red-500" },
-                    { organ: "Endocrine & Metabolic", score: 58, sev: "major", bar: "bg-amber-400" },
+                    { organ: "Endocrine & Hormonal", score: 58, sev: "major", bar: "bg-amber-400" },
                     { organ: "Liver & Digestive", score: 81, sev: "normal", bar: "bg-emerald-400" },
-                    { organ: "Brain & Cognition", score: 91, sev: "normal", bar: "bg-emerald-400" },
+                    { organ: "Brain & Mental", score: 91, sev: "normal", bar: "bg-emerald-400" },
                     { organ: "Bone, Muscle & Joint", score: 74, sev: "minor", bar: "bg-yellow-400" },
                     { organ: "Vascular Health", score: 88, sev: "normal", bar: "bg-emerald-400" },
                   ].map((r) => (

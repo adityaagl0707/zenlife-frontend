@@ -36,7 +36,7 @@ const FAQ_SECTIONS = [
       },
       {
         q: "What organ systems are tracked?",
-        a: "Fifteen: Heart, Endocrine & Metabolic, Liver & Digestive, Brain & Cognitive, Kidney & Urinary, Inflammation & Immune, General Health (Blood & Nutrients), Reproductive, Bone/Muscle/Joint, Lung & Respiratory, Vascular, Hormonal & Vitality, Mental & Stress Resilience, Men's Health (males only), Women's Health (females only).",
+        a: "Eleven: Heart, Endocrine & Hormonal, Liver & Digestive, Brain & Mental, Kidney & Urinary, Blood / Immunity / Nutrition, Bone/Muscle/Joint, Lung & Respiratory, Vascular, Men's Health (males only), Women's Health (females only).",
       },
       {
         q: "How many parameters are measured?",

@@ -64,8 +64,8 @@ const REPORT_FEATURES = [
     body: "Built on the validated PhenoAge formula (9 blood biomarkers) plus an AI-driven synthesis across all your scan data. Returns 5 sub-ages: metabolic, vascular, bone & muscle, inflammation and kidney.",
   },
   {
-    title: "15-Organ Analysis",
-    body: "Heart, Endocrine & Metabolic, Liver & Digestive, Brain & Cognitive, Kidney & Urinary, Inflammation & Immune, Blood & Nutrients, Reproductive, Bone/Muscle/Joint, Lung & Respiratory, Vascular, Hormonal & Vitality, Mental & Stress, Men's Health, Women's Health.",
+    title: "11-Organ Analysis",
+    body: "Heart, Endocrine & Hormonal, Liver & Digestive, Brain & Mental, Kidney & Urinary, Blood / Immunity / Nutrition, Bone/Muscle/Joint, Lung & Respiratory, Vascular, Men's Health, Women's Health.",
   },
   {
     title: "Personalised Health Priorities",

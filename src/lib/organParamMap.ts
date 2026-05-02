@@ -17,15 +17,16 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "vldl cholesterol",
   ],
 
-  "Endocrine & Metabolic Health": [
-    "adrenals","android fat","android:gynoid ratio","apolipoprotein b",
+  // Merged: Endocrine & Metabolic + Hormonal & Vitality
+  "Endocrine & Hormonal Health": [
+    "adrenals","android fat","android:gynoid ratio","anti-tg","apolipoprotein b",
     "average blood glucose","bmi","body fat","c-peptide",
-    "cortisol","dhea","fasting blood glucose","fat free mass",
-    "fat mass index","gynoid fat","hba1c","hdl cholesterol",
+    "cortisol","dhea","estradiol (e2)","fasting blood glucose","fat free mass",
+    "fat mass index","free testosterone","gynoid fat","hba1c","hdl cholesterol",
     "hdl/ldl ratio","homa-ir","igf-1","insulin",
     "ketone","ldl cholesterol","ldl/hdl ratio","lipoprotein (a)",
-    "liver fat %","liver steatosis grade","non-hdl cholesterol","reverse t3",
-    "testosterone","thyroid","thyroid lesions","thyroid volume",
+    "liver fat %","liver steatosis grade","non-hdl cholesterol","psa","reverse t3",
+    "shbg","testosterone","thyroid","thyroid lesions","thyroid volume",
     "thyroxine (t4) free","total cholesterol","total cholesterol / hdl","total fat mass",
     "tpo","triglycerides","triglycerides / hdl","triiodothyronine (t3) free",
     "trunk fat mass","trunk:limb fat ratio","tsh","visceral fat level",
@@ -51,22 +52,29 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "total protein",
   ],
 
-  "Brain & Cognitive Health": [
-    "basal ganglia","bone, muscle & joint health: congenital causes","bone, muscle & joint health: degenerative","bone, muscle & joint health: infective-active",
-    "bone, muscle & joint health: inflammation","bone, muscle & joint health: ischemic causes","bone, muscle & joint health: post-infective","bone, muscle & joint health: traumatic issues",
-    "bone, muscle & joint health: tumours","brain: congenital causes","brain: degenerative","brain: infective-active",
+  // Merged: Brain & Cognitive + Mental & Stress Resilience
+  "Brain & Mental Health": [
+    "basal ganglia","brain: congenital causes","brain: degenerative","brain: infective-active",
     "brain: ischemic causes","brain: post-infective","brain: tumours","cerebral white matter",
-    "endocrine and metabolic health: congenital causes","endocrine and metabolic health: degenerative","endocrine and metabolic health: infective-active","endocrine and metabolic health: inflammation",
-    "endocrine and metabolic health: ischemic causes","endocrine and metabolic health: post-infective","endocrine and metabolic health: tumours","frontal sinuses",
-    "globes","heart health: congenital causes","heart health: degenerative","heart health: infective-active",
-    "heart health: inflammation","heart health: ischemic causes","heart health: post-infective","heart health: tumours",
-    "homocysteine levels","kidney & urinary health: congenital causes","kidney & urinary health: degenerative","kidney & urinary health: infective-active",
-    "kidney & urinary health: inflammation","kidney & urinary health: ischemic causes","kidney & urinary health: post-infective","kidney & urinary health: traumatic issues",
-    "kidney & urinary health: tumours","lacrimal glands","maxillary sinuses","meninges",
+    "frontal sinuses","globes","homocysteine levels",
+    "lacrimal glands","maxillary sinuses","meninges",
     "midbrain","optic nerve","orbital fat","orbits",
-    "paranasal sinuses","pons","reproductive health: congenital causes","reproductive health: degenerative",
-    "reproductive health: infective-active","reproductive health: inflammation","reproductive health: ischemic causes","reproductive health: post-infective",
-    "reproductive health: tumours","veins","ventricles","white matter hyperintensity",
+    "paranasal sinuses","pons","veins","ventricles","white matter hyperintensity",
+    // Cross-system rollup labels (not real findings; filtered by isRollup)
+    "bone, muscle & joint health: congenital causes","bone, muscle & joint health: degenerative",
+    "bone, muscle & joint health: infective-active","bone, muscle & joint health: inflammation",
+    "bone, muscle & joint health: ischemic causes","bone, muscle & joint health: post-infective",
+    "bone, muscle & joint health: traumatic issues","bone, muscle & joint health: tumours",
+    "endocrine and metabolic health: congenital causes","endocrine and metabolic health: degenerative",
+    "endocrine and metabolic health: infective-active","endocrine and metabolic health: inflammation",
+    "endocrine and metabolic health: ischemic causes","endocrine and metabolic health: post-infective",
+    "endocrine and metabolic health: tumours","heart health: congenital causes","heart health: degenerative",
+    "heart health: infective-active","heart health: inflammation","heart health: ischemic causes",
+    "heart health: post-infective","heart health: tumours","kidney & urinary health: congenital causes",
+    "kidney & urinary health: degenerative","kidney & urinary health: infective-active",
+    "kidney & urinary health: inflammation","kidney & urinary health: ischemic causes",
+    "kidney & urinary health: post-infective","kidney & urinary health: traumatic issues",
+    "kidney & urinary health: tumours",
   ],
 
   "Kidney & Urinary Health": [
@@ -86,30 +94,19 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "urine albumin/creatinine","urine blood","urine ketone","yeast",
   ],
 
-  "Inflammation & Immune Health": [
-    "abdominal lymph nodes","anti-tg","basophils","basophils - count",
-    "d-dimer","eosinophils","eosinophils - count","esr",
-    "fibrinogen","homocysteine levels","hs-crp","ige",
-    "left breast: lymphadenopathy","lymphocytes","lymphocytes - count","monocytes",
-    "monocytes - count","neck lymphnodes","neutrophils","neutrophils - count",
-    "right breast: lymphadenopathy","vitamin e",
-  ],
-
-  "General Health, Blood & Nutrients": [
-    "abdominal wall","android fat","android:gynoid ratio","basophils",
-    "basophils - count","bmi","body fat","calcium",
-    "cea","copper","eosinophils","eosinophils - count",
-    "ferritin","folate (b9)","gynoid fat","hematocrit",
-    "hemoglobin","immature granulocytes","immature granulocytes %","iron",
-    "iron % saturation","ldh","lean mass","lymphocytes",
-    "lymphocytes - count","magnesium, rbc","mch","mchc",
-    "mcv","monocytes","monocytes - count","mpv",
-    "neutrophils","neutrophils - count","nucleated rbc","nucleated rbc %",
-    "pdw","peritoneum","phosphorus","platelet count",
-    "plateletcrit (pct)","plcr","rbc","rdw",
-    "rdw-sd","rsmi","selenium","tibc",
-    "uibc","visceral fat mass","vitamin a","vitamin b12",
-    "vitamin d","vitamin e","wbc","zinc",
+  // Merged: General Health, Blood & Nutrients + Inflammation & Immune Health
+  "Blood, Immunity & Nutrition": [
+    "abdominal lymph nodes","abdominal wall","android fat","android:gynoid ratio",
+    "anti-tg","basophils","basophils - count","bmi","body fat","calcium","cea","copper",
+    "d-dimer","eosinophils","eosinophils - count","esr","ferritin","fibrinogen",
+    "folate (b9)","gynoid fat","hematocrit","hemoglobin","homocysteine levels","hs-crp",
+    "ige","immature granulocytes","immature granulocytes %","iron","iron % saturation",
+    "ldh","lean mass","left breast: lymphadenopathy","lymphocytes","lymphocytes - count",
+    "magnesium, rbc","mch","mchc","mcv","monocytes","monocytes - count","mpv",
+    "neck lymphnodes","neutrophils","neutrophils - count","nucleated rbc","nucleated rbc %",
+    "pdw","peritoneum","phosphorus","platelet count","plateletcrit (pct)","plcr","rbc",
+    "rdw","rdw-sd","right breast: lymphadenopathy","rsmi","selenium","tibc","uibc",
+    "visceral fat mass","vitamin a","vitamin b12","vitamin d","vitamin e","wbc","zinc",
   ],
 
   "Bone, Muscle & Joint Health": [
@@ -139,19 +136,9 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "d-dimer","fat mass index","fibrinogen","homa-ir","pt / inr","trunk:limb fat ratio",
   ],
 
-  "Hormonal & Vitality Health": [
-    "adrenals","anti-tg","cortisol","dhea",
-    "estradiol (e2)","free testosterone","igf-1","psa",
-    "reverse t3","shbg","testosterone","thyroid",
-    "thyroid lesions","thyroid volume","thyroxine (t4) free","tpo",
-    "triiodothyronine (t3) free","tsh",
-  ],
-
-  "Mental & Stress Resilience": [
-    "basal ganglia","cerebral white matter","cortisol","dhea",
-    "meninges","midbrain","pons","ventricles",
-    "white matter hyperintensity",
-  ],
+  // Hormonal & Vitality Health merged into Endocrine & Hormonal Health
+  // Mental & Stress Resilience merged into Brain & Mental Health
+  // Inflammation & Immune Health merged into Blood, Immunity & Nutrition
 
   "Women's Health": [
     "amh","breast","breast density","breast ultrasound",
