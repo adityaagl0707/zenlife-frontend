@@ -60,9 +60,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const searchParams = useSearchParams();
   const reportId = parseInt(id);
 
-  // Deep-link state from a finding card: ?q=<question>&send=1&return=<context>&finding=<name>
+  // Deep-link state from a finding card: ?q=<question>&return=<context>&finding=<name>
+  // Question pre-fills the composer — patient reviews/edits then taps send.
   const seedQuestion = searchParams?.get("q") || "";
-  const autoSend = searchParams?.get("send") === "1";
   const returnContext = searchParams?.get("return") || "";
   const returnFinding = searchParams?.get("finding") || "";
   const backHref = returnContext
@@ -74,7 +74,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [starters, setStarters] = useState<string[]>(FALLBACK_STARTERS);
-  const autoSentRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,7 +82,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       .history(reportId)
       .then((history) => {
         setMessages(history);
-        if (seedQuestion && !autoSend) setInput(seedQuestion);
+        if (seedQuestion) setInput(seedQuestion);
       })
       .finally(() => setLoading(false));
     api.chat
@@ -92,17 +91,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         if (d?.starters?.length) setStarters(d.starters.slice(0, 4));
       })
       .catch(() => { /* keep fallback */ });
-  }, [reportId, router, seedQuestion, autoSend]);
-
-  // Auto-send the seed question once history has loaded so the patient
-  // lands directly on Zeno's answer instead of a pre-filled composer.
-  useEffect(() => {
-    if (!loading && autoSend && seedQuestion && !autoSentRef.current) {
-      autoSentRef.current = true;
-      send(seedQuestion);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, autoSend, seedQuestion]);
+  }, [reportId, router, seedQuestion]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -332,7 +332,7 @@ function FindingCard({ finding, reportId, returnContext, autoExpand }: {
                 <Link
                   href={`/report/${reportId}/chat?q=${encodeURIComponent(
                     `Tell me more about my ${finding.name} of ${finding.value || "—"}${finding.unit ? " " + finding.unit : ""} — what should I do?`
-                  )}&send=1&return=${encodeURIComponent(returnContext)}&finding=${encodeURIComponent(finding.name)}`}
+                  )}&return=${encodeURIComponent(returnContext)}&finding=${encodeURIComponent(finding.name)}`}
                   className="flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-gray-50 text-[11px] font-bold text-zen-700 hover:bg-zen-50/50 transition-colors"
                 >
                   <Sparkles className="h-3 w-3" />
