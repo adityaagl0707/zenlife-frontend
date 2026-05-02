@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { X, Loader2, Sparkles, EyeOff, Eye } from "lucide-react";
+import { X, Loader2, Sparkles, EyeOff, Eye, ChevronDown, ChevronRight, EyeOff as IgnoreAllIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SECTION_META } from "./ReportSectionsPanel";
 import { genderExcludedNames } from "@/lib/organParamMap";
@@ -60,6 +60,10 @@ export default function PreGenerateDrawer({ reportId, patientGender, open, onClo
   const [loading, setLoading] = useState(true);
   const [savingParam, setSavingParam] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
+  // Collapsed sections — start with everything collapsed so the drawer is
+  // a scannable list of section badges; click to expand and fill rows.
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleSection = (sec: string) => setCollapsed((p) => ({ ...p, [sec]: !p[sec] }));
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -114,6 +118,22 @@ export default function PreGenerateDrawer({ reportId, patientGender, open, onClo
     } finally { setSavingParam(null); }
   }
 
+  /** Bulk-ignore every still-unfilled param in this section. */
+  async function ignoreSection(sec: string) {
+    const names = (filteredBySection[sec] || []).map((p) => p.name);
+    if (!names.length) return;
+    if (!confirm(`Ignore all ${names.length} unfilled parameter(s) in this section for this patient?`)) return;
+    setSavingParam(`__section:${sec}`);
+    try {
+      await fetch(`${BASE}/admin/reports/${reportId}/ignored-params`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ add: names }),
+      });
+      await refresh();
+    } finally { setSavingParam(null); }
+  }
+
   async function unignoreParam(name: string) {
     setSavingParam(name);
     try {
@@ -162,12 +182,38 @@ export default function PreGenerateDrawer({ reportId, patientGender, open, onClo
           ) : (
             Object.entries(filteredBySection).map(([sec, params]) => {
               const meta = data.section_meta[sec] || { label: sec, icon: "•" };
+              const isCollapsed = collapsed[sec] ?? true; // collapsed by default
+              const sectionBusy = savingParam === `__section:${sec}`;
               return (
-                <section key={sec}>
-                  <h3 className="mb-2 text-[12px] font-bold uppercase tracking-wider text-gray-500">
-                    {meta.icon} {meta.label} <span className="ml-1 text-gray-400">({params.length})</span>
-                  </h3>
-                  <div className="space-y-1.5">
+                <section key={sec} className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+                  {/* Collapsible header */}
+                  <div className="flex items-center gap-2 px-4 py-3 bg-cream/50 border-b border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(sec)}
+                      className="flex-1 flex items-center gap-2 text-left"
+                    >
+                      {isCollapsed ? <ChevronRight className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                      <span className="text-[15px]">{meta.icon}</span>
+                      <span className="text-[13px] font-bold text-zen-900">{meta.label}</span>
+                      <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-bold">
+                        {params.length} unfilled
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => ignoreSection(sec)}
+                      disabled={sectionBusy}
+                      title={`Ignore all ${params.length} unfilled in this section`}
+                      className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold text-gray-500 hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      {sectionBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <IgnoreAllIcon className="h-3 w-3" />}
+                      Ignore all
+                    </button>
+                  </div>
+
+                  {/* Body — only rendered when expanded */}
+                  {!isCollapsed && (
+                  <div className="p-3 space-y-1.5">
                     {params.map((p) => (
                       <div key={p.name} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
                         <div className="min-w-0 flex-1">
@@ -207,6 +253,7 @@ export default function PreGenerateDrawer({ reportId, patientGender, open, onClo
                       </div>
                     ))}
                   </div>
+                  )}
                 </section>
               );
             })
