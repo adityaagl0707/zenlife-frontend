@@ -724,9 +724,11 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             { key: "mri",           label: "MRI Report",       icon: "🧲" },
             { key: "mammography",   label: "Mammography",      icon: "🎀" },
           ];
-          // Roll up findings per test type (only render rows that have data)
+          // Roll up parameters per test type — apply the same CBC twin
+          // merge the drawer applies so the card's "N parameters" matches
+          // the drawer header exactly.
           const rows = TEST_CONFIG.map((t) => {
-            const ts = visibleFindings.filter((f) => f.test_type?.toLowerCase() === t.key);
+            const ts = mergePairs(visibleFindings.filter((f) => f.test_type?.toLowerCase() === t.key));
             const c = { critical: 0, major: 0, minor: 0, normal: 0 } as Record<string, number>;
             for (const f of ts) {
               const sev = (f.severity || "normal").toLowerCase();
@@ -756,7 +758,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                       <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-bold text-zen-900 leading-snug truncate">{r.label}</p>
                         <p className="text-[11px] text-gray-400 mt-0.5">
-                          {r.total} {r.total === 1 ? "finding" : "findings"}
+                          {r.total} {r.total === 1 ? "parameter" : "parameters"}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-1 flex-shrink-0 justify-end max-w-[140px]">
