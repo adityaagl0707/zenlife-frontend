@@ -28,7 +28,7 @@ import { isLoggedIn } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import OrganGrid from "@/components/report/OrganGrid";
 import FindingsPanel, { mergePairs } from "@/components/report/FindingsPanel";
-import { ORGAN_PARAM_MAP } from "@/lib/organParamMap";
+import { findingsForOrgan } from "@/lib/organParamMap";
 import ZenAgeCard from "@/components/report/ZenAgeCard";
 
 // ── Severity config ────────────────────────────────────────────────────────
@@ -328,11 +328,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   }, []);
 
   function openOrganPanel(organ: OrganScore) {
-    const params = new Set((ORGAN_PARAM_MAP[organ.organ_name] ?? []).map((p) => p.toLowerCase()));
-    // Filter findings to only those belonging to this organ's parameter list
-    const organFindings = visibleFindings.filter((f) => params.has(f.name?.toLowerCase().trim() ?? ""));
+    // Use findingsForOrgan so the drawer applies the SAME canonicalization
+    // (alias → primary, dedupe by canonical) the organ-card counter uses.
+    // Plain lowercase matching missed CBC twins and aliased rows, so e.g.
+    // a "Lymphocytes" finding counted as 1 minor on the card but vanished
+    // from the drawer because the organ map lists "lymphocytes - count".
+    const organFindings = findingsForOrgan(organ.organ_name, visibleFindings);
     setPanelOrgan(organ);
-    setPanelFindings(organFindings);   // show only matched findings — never fall back to all
+    setPanelFindings(organFindings);
     setPanelOpen(true);
   }
 

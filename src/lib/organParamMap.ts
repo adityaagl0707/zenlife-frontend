@@ -311,3 +311,22 @@ export function computeOrganCounts(organName: string, findings: Finding[]): Seve
   }
   return counts;
 }
+
+/**
+ * Findings that belong to this organ — uses the SAME canonicalization
+ * (aliases + rollup filter + dedup-by-canonical) as `computeOrganCounts`,
+ * so the drawer's row list 1:1 matches the card's per-severity counts.
+ */
+export function findingsForOrgan(organName: string, findings: Finding[]): Finding[] {
+  const wanted = canonicalParamSet(organName);
+  if (!wanted.size) return [];
+  const seen = new Set<string>();
+  const out: Finding[] = [];
+  for (const f of findings) {
+    const key = canon(f.name);
+    if (!wanted.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    out.push(f);
+  }
+  return out;
+}
