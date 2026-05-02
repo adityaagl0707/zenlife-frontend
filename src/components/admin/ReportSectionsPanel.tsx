@@ -289,6 +289,133 @@ function ParamPairRow({
   );
 }
 
+// ── Aggregated read-only view across every section ──────────────────────────
+//
+// Sidebar entry "📊 Total" routes here. Lets the operator sweep across the
+// whole report by severity / search without flipping between sections, and
+// click any row to jump straight to its source section for editing.
+function AllParamsPanel({
+  allSections,
+  visibleSections,
+  onJumpToSection,
+}: {
+  allSections: Record<string, SectionData | null>;
+  visibleSections: string[];
+  onJumpToSection: (section: string) => void;
+}) {
+  const [filterSev, setFilterSev] = useState("all");
+  const [search, setSearch] = useState("");
+
+  // Flatten — dedupe by lowercase name so MRI/USG twins don't double-count.
+  type Row = { section: string; def: ParamDef; val?: ParamValue; sev: string; filled: boolean };
+  const seen = new Set<string>();
+  const rows: Row[] = [];
+  for (const st of visibleSections) {
+    const data = allSections[st];
+    if (!data) continue;
+    const visibleDefs = data.param_definitions.filter((d) => !(d.name in CBC_TWINS));
+    for (const d of visibleDefs) {
+      const key = d.name.toLowerCase().trim();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const sec = TWIN_SECONDARY[d.name];
+      const primary = data.parameters[d.name];
+      const secondary = sec ? data.parameters[sec] : undefined;
+      const filled = isFilledValue(primary?.value) || isFilledValue(secondary?.value);
+      const sev = filled ? (primary?.severity || secondary?.severity || "normal") : "pending";
+      rows.push({ section: st, def: d, val: primary, sev, filled });
+    }
+  }
+
+  const counts = { critical: 0, major: 0, minor: 0, normal: 0, pending: 0 } as Record<string, number>;
+  for (const r of rows) counts[r.sev] = (counts[r.sev] || 0) + 1;
+
+  const filtered = rows.filter((r) => {
+    const matchSev = filterSev === "all" || r.sev === filterSev;
+    const matchSearch = !search || r.def.name.toLowerCase().includes(search.toLowerCase());
+    return matchSev && matchSearch;
+  });
+
+  const sevDot: Record<string, string> = {
+    critical: "bg-red-500", major: "bg-orange-400", minor: "bg-yellow-400",
+    normal: "bg-emerald-400", pending: "bg-gray-300",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm font-semibold text-gray-700">
+          {rows.length} unique parameters across {visibleSections.length} sections
+        </p>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search parameter…"
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zen-500"
+        />
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {(["all", "critical", "major", "minor", "normal", "pending"] as const).map((s) => (
+          <button
+            key={s}
+            onClick={() => setFilterSev(s)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold capitalize transition-all",
+              filterSev === s ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            )}
+          >
+            {s !== "all" && <span className={cn("h-1.5 w-1.5 rounded-full", sevDot[s])} />}
+            {s}
+            <span className={cn(
+              "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+              filterSev === s ? "bg-white/20 text-white" : "bg-white text-gray-500"
+            )}>
+              {s === "all" ? rows.length : counts[s]}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="max-h-[640px] overflow-y-auto pr-1 rounded-2xl border border-gray-100 bg-white divide-y divide-gray-100">
+        {filtered.length === 0 ? (
+          <p className="text-center text-sm text-gray-400 py-12">No parameters match this filter.</p>
+        ) : (
+          filtered.map((r) => (
+            <button
+              key={`${r.section}::${r.def.name}`}
+              onClick={() => onJumpToSection(r.section)}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+            >
+              <span className={cn("h-2 w-2 rounded-full flex-shrink-0", sevDot[r.sev])} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-gray-900 truncate">{r.def.name}</p>
+                <p className="text-[10px] text-gray-400">
+                  {SECTION_META[r.section]?.icon} {SECTION_META[r.section]?.label}
+                  {r.def.normal && <> · Normal: {r.def.normal}</>}
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-[13px] font-bold text-gray-800 tabular-nums">
+                  {r.filled ? r.val?.value || "—" : <span className="text-gray-300 italic font-normal">pending</span>}
+                  {r.filled && r.def.unit && <span className="text-gray-400 font-normal text-[11px] ml-1">{r.def.unit}</span>}
+                </p>
+              </div>
+              <span className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase border flex-shrink-0",
+                SEVERITY_COLORS[r.sev] || SEVERITY_COLORS.normal
+              )}>
+                {r.sev}
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SectionPanel({
   reportId,
   sectionType,
@@ -928,25 +1055,61 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
             </button>
           );
         })}
+
+        {/* Aggregate "Total" tab — read-only sweep across every section */}
+        <div className="my-2 border-t border-gray-100" />
+        <button
+          onClick={() => setActiveSection("__total__")}
+          className={cn(
+            "w-full text-left rounded-xl px-3 py-2.5 text-sm transition-all",
+            activeSection === "__total__"
+              ? "bg-zen-800 text-white font-semibold"
+              : "text-gray-600 hover:bg-gray-100"
+          )}
+        >
+          <span className="mr-2">📊</span>
+          <span>Total</span>
+          <span className={cn("ml-1 text-xs", activeSection === "__total__" ? "text-zen-200" : "text-gray-400")}>
+            ({grandFilled}/{grandTotal})
+          </span>
+        </button>
       </div>
 
       {/* Right: active section panel */}
       <div className="flex-1 pl-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-bold text-gray-900">
-            {SECTION_META[activeSection].icon} {SECTION_META[activeSection].label}
-          </h3>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Upload the report to auto-extract values, or enter manually. Expand any row to add clinical findings & recommendations.
-          </p>
-        </div>
-        <SectionPanel
-          key={activeSection}
-          reportId={reportId}
-          sectionType={activeSection}
-          initialData={allSections[activeSection] || null}
-          onSaved={loadAll}
-        />
+        {activeSection === "__total__" ? (
+          <>
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-gray-900">📊 All Parameters</h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Every parameter across all {visibleSections.length} sections, deduped. Click any row to jump to its source section for editing.
+              </p>
+            </div>
+            <AllParamsPanel
+              allSections={allSections}
+              visibleSections={visibleSections}
+              onJumpToSection={(s) => setActiveSection(s)}
+            />
+          </>
+        ) : (
+          <>
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-gray-900">
+                {SECTION_META[activeSection].icon} {SECTION_META[activeSection].label}
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Upload the report to auto-extract values, or enter manually. Expand any row to add clinical findings & recommendations.
+              </p>
+            </div>
+            <SectionPanel
+              key={activeSection}
+              reportId={reportId}
+              sectionType={activeSection}
+              initialData={allSections[activeSection] || null}
+              onSaved={loadAll}
+            />
+          </>
+        )}
       </div>
     </div>
     </div>
