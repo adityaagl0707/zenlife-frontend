@@ -190,25 +190,52 @@ function FindingCard({ finding }: { finding: Finding }) {
         </div>
       </div>
 
-      {/* Value comparison */}
-      {(finding.value || finding.normal_range) && (
-        <div className="px-4 pb-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">Normal Range</p>
-              <p className="text-sm font-bold text-gray-600 truncate">{finding.normal_range || "—"}</p>
-              {finding.unit && <p className="text-[10px] text-gray-400">{finding.unit}</p>}
+      {/* Value display
+          - If we have a numeric normal range (something with digits, < / > /
+            – etc.), show side-by-side compare + a gauge.
+          - If the normal is missing or qualitative ("Normal", "Negative",
+            "Absent", "None", "BIRADS 1", etc.), just show the patient's
+            value alone — no gauge, no parallel "Normal Range" panel that
+            would just say the same word.
+       */}
+      {(() => {
+        const range = (finding.normal_range || "").trim();
+        const isNumericRange = /[<>≤≥0-9]/.test(range);
+        if (!finding.value && !range) return null;
+
+        if (isNumericRange) {
+          return (
+            <div className="px-4 pb-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">Normal Range</p>
+                  <p className="text-sm font-bold text-gray-600 truncate">{range}</p>
+                  {finding.unit && <p className="text-[10px] text-gray-400">{finding.unit}</p>}
+                </div>
+                <div className={cn("rounded-xl px-3 py-2 text-center", sev.value)}>
+                  <p className="text-[9px] font-bold uppercase tracking-widest opacity-60 mb-1">Your Value</p>
+                  <p className="text-sm font-bold truncate">
+                    {finding.value || "—"}{finding.unit ? ` ${finding.unit}` : ""}
+                  </p>
+                </div>
+              </div>
+              <ValueGauge value={finding.value} range={finding.normal_range} severity={finding.severity} />
             </div>
-            <div className={cn("rounded-xl px-3 py-2 text-center", sev.value)}>
+          );
+        }
+
+        // Qualitative / no range — single full-width value card
+        return (
+          <div className="px-4 pb-3">
+            <div className={cn("rounded-xl px-4 py-3 text-center", sev.value)}>
               <p className="text-[9px] font-bold uppercase tracking-widest opacity-60 mb-1">Your Value</p>
               <p className="text-sm font-bold truncate">
                 {finding.value || "—"}{finding.unit ? ` ${finding.unit}` : ""}
               </p>
             </div>
           </div>
-          <ValueGauge value={finding.value} range={finding.normal_range} severity={finding.severity} />
-        </div>
-      )}
+        );
+      })()}
 
       {/* Description */}
       {finding.description && (
