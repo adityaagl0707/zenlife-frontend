@@ -712,7 +712,21 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                   </div>
                   <Sparkles className="h-3.5 w-3.5 text-gray-300 flex-shrink-0" />
                 </div>
-                <p className="text-[12px] text-gray-700 leading-[1.55]">{report.summary}</p>
+                {/* Render the summary as bullet points — splits on sentence
+                    boundaries so each clinical observation reads as a
+                    discrete bullet rather than a wall of prose. */}
+                <ul className="space-y-1.5">
+                  {report.summary
+                    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .map((sentence, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700 leading-[1.55]">
+                        <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-zen-700" />
+                        <span>{sentence}</span>
+                      </li>
+                    ))}
+                </ul>
                 <Link
                   href={`/report/${reportId}/chat`}
                   className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-zen-700 hover:text-zen-900 transition-colors"
