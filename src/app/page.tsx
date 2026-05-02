@@ -10,37 +10,49 @@ const SCANS = [
     num: "01",
     name: "Full-Body MRI",
     tag: "Zero radiation",
-    desc: "High-resolution magnetic resonance imaging across every organ — tumours, structural changes, vascular anomalies. The only scan that sees your entire body without exposing you to radiation.",
+    desc: "High-resolution imaging across brain, spine, abdomen, pelvis and major vessels — tumours, structural changes, organ anatomy, vascular anomalies. 100+ MRI parameters reviewed per scan, with no ionising radiation.",
   },
   {
     num: "02",
-    name: "DEXA Scan",
-    tag: "Body composition",
-    desc: "Bone density, visceral fat, skeletal muscle mass and the android:gynoid fat ratio. DEXA reveals what the weighing scale never could — how your body is actually ageing on the inside.",
+    name: "Whole-Abdomen Ultrasound",
+    tag: "Soft-tissue clarity",
+    desc: "Liver, gallbladder, pancreas, spleen, kidneys, urinary bladder and reproductive organs. Real-time, radiation-free imaging that complements MRI for fatty liver grading, gallstones, cysts and thyroid lesions.",
   },
   {
     num: "03",
-    name: "CT Calcium Score",
-    tag: "Cardiac risk",
-    desc: "Calcium deposits in coronary arteries are the single most predictive marker of heart attack — more accurate than cholesterol alone. Silent plaque, found before the first symptom.",
+    name: "DEXA Scan",
+    tag: "Body composition",
+    desc: "Bone mineral density (T-score, Z-score), visceral fat, appendicular lean mass, ASMI and Fat Mass Index. The gold standard for sarcopenia, osteoporosis screening and metabolic risk — what the bathroom scale never sees.",
   },
   {
     num: "04",
-    name: "Lung CT Scan",
-    tag: "Early nodules",
-    desc: "Low-dose high-resolution CT for pulmonary nodules, fibrosis and airway disease — the same scan that caught Steve Jobs' tumour at a stage where it was still treatable.",
+    name: "CT Calcium Score",
+    tag: "Cardiac risk",
+    desc: "Per-vessel Agatston scoring (LM, LAD, LCK, RCA) for coronary artery calcification — the single strongest predictor of heart attack risk, more accurate than cholesterol alone.",
   },
   {
     num: "05",
-    name: "12-Lead ECG",
-    tag: "Cardiac rhythm",
-    desc: "Resting ECG analysis for arrhythmias, conduction defects and silent ischaemia. Interpreted by our cardiologists alongside your calcium score for complete cardiac context.",
+    name: "Chest X-Ray",
+    tag: "Lung & thoracic",
+    desc: "Lung parenchyma, pleural space, vasculature, mediastinum and lymph nodes — screening for nodules, infection, fibrosis and structural changes in the chest.",
   },
   {
     num: "06",
-    name: "100+ Biomarkers",
+    name: "12-Lead ECG",
+    tag: "Cardiac rhythm",
+    desc: "Resting ECG with PR interval, QRS duration, QTc, ST segment and rhythm analysis — picks up arrhythmias, conduction defects and silent ischaemia, interpreted alongside your calcium score.",
+  },
+  {
+    num: "07",
+    name: "150+ Lab Biomarkers",
     tag: "Blood & urine",
-    desc: "A comprehensive blood and urine panel spanning metabolic, hormonal, inflammatory, nutritional and organ-specific markers — far beyond what a standard annual checkup orders.",
+    desc: "Glucose, full lipid panel, liver, kidney, electrolytes, thyroid, full CBC differential, iron studies, vitamins (D, B12, A, E, Folate), minerals, hormones, inflammation (hs-CRP), advanced cardiovascular (NT-proBNP, ApoB, Lp(a)) plus 25-parameter urinalysis.",
+  },
+  {
+    num: "08",
+    name: "Mammography",
+    tag: "Women only",
+    desc: "Digital mammography screening with BI-RADS categorisation across both breasts — included for women aged 40+, optional for younger members.",
   },
 ];
 
@@ -64,7 +76,7 @@ const STORIES = [
     finding: "Silent fatty liver + elevated homocysteine",
   },
   {
-    quote: "2.8cm thyroid nodule. My GP had been doing blood tests for three years and never flagged it. The MRI found it on day one.",
+    quote: "2.8cm thyroid nodule on USG. My GP had been doing blood tests for three years and never flagged it. The ultrasound found it on day one.",
     name: "Vikram N.",
     detail: "29 · Consultant · Noida",
     finding: "2.8cm thyroid nodule — surgically removed",
@@ -72,26 +84,28 @@ const STORIES = [
 ];
 
 const STEPS = [
-  { n: "1", title: "Book & prepare", body: "Choose a date, complete a pre-scan health questionnaire. At-home blood and urine collection is arranged the day before your scan." },
-  { n: "2", title: "Your scan day", body: "3–4 hours at our facility. Full-body MRI, DEXA, Calcium Score CT, Lung CT, 12-lead ECG. No injections required for most scans." },
-  { n: "3", title: "AI-powered analysis", body: "ZenCore Protocol analyses every image and biomarker. ZenScore organ risk scores are calculated across all 10 organ systems." },
-  { n: "4", title: "Your ZenReport", body: "A physician-reviewed report with Zeno AI explaining every finding in plain language. Available in 5–7 business days." },
+  { n: "1", title: "Book & prepare", body: "Pick a date and complete a pre-scan questionnaire. At-home blood and urine collection is arranged the day before your scan." },
+  { n: "2", title: "Your scan day", body: "3–4 hours at our facility — Full-body MRI, Whole-abdomen USG, DEXA, Calcium Score CT, Chest X-Ray, 12-lead ECG. Mammography for women 40+." },
+  { n: "3", title: "AI-powered analysis", body: "ZenCore Protocol analyses 400+ parameters across 15 organ systems, computes your ZenScore, ZenAge biological age and personalised health priorities." },
+  { n: "4", title: "Your ZenReport", body: "Physician-reviewed report with Zeno AI explaining every finding in plain language. Diet, exercise, sleep and supplement plan included. Delivered in 5–7 business days." },
 ];
 
 const INCLUDES = [
-  "Full-Body MRI", "DEXA Body Composition", "CT Calcium Score",
-  "Lung CT Scan", "12-Lead ECG", "100+ Blood Biomarkers",
-  "ZenScore Organ Report", "Zeno AI Health Assistant",
-  "Doctor-reviewed findings", "Consultation included",
+  "Full-Body MRI", "Whole-Abdomen USG", "DEXA Body Composition",
+  "CT Calcium Score", "Chest X-Ray", "12-Lead ECG",
+  "150+ Lab Biomarkers", "ZenScore + ZenAge",
+  "15-organ ZenReport", "Zeno AI (12 months)",
+  "Personalised Priorities", "Physician consultation",
+  "Doctor-shareable secure link",
 ];
 
 const FAQS = [
-  { q: "Who should get a ZenScan?", a: "Anyone above 25 who wants a definitive baseline — especially those with a family history of cancer, heart disease or metabolic conditions, or anyone who has never had imaging done." },
-  { q: "How long is the scan?", a: "The full ZenScan session is 3–4 hours. Your report is delivered within 5–7 business days, with a doctor consultation included." },
-  { q: "Is the MRI radiation-free?", a: "Yes. Full-Body MRI and DEXA involve zero radiation. The Calcium Score CT involves radiation equivalent to 1–2 chest X-rays." },
-  { q: "What does the ZenScore mean?", a: "ZenScore is a 0–100 organ health index calculated across 10 organ systems. It combines imaging findings, biomarkers and body composition into one comparable number." },
-  { q: "Can I get ZenScan if I'm outside your city?", a: "We currently operate in select cities. For corporate or outstation bookings, contact us directly — we arrange travel logistics for groups." },
-  { q: "Is a doctor consultation included?", a: "Yes. Every ZenScan includes a physician consultation to walk you through your findings and recommend next steps based on your results." },
+  { q: "Who should get a ZenScan?", a: "Anyone above 25 who wants a definitive health baseline — especially those with a family history of cancer, heart disease, diabetes or metabolic conditions, or anyone who has never had a comprehensive scan." },
+  { q: "How long is the scan?", a: "The full ZenScan session is 3–4 hours. Your report is delivered within 5–7 business days, with a physician consultation included." },
+  { q: "Is the scan radiation-free?", a: "Mostly yes. MRI, DEXA and Ultrasound involve zero ionising radiation. The Calcium Score CT and Chest X-Ray involve very low radiation — combined dose roughly equivalent to 4 months of natural background exposure." },
+  { q: "What does the ZenScore mean?", a: "ZenScore is a 0–100 health-intelligence index calculated across 15 organ systems. It synthesises imaging findings, body composition and 150+ biomarkers into one comparable number." },
+  { q: "What is ZenAge?", a: "ZenAge is your biological age — derived from the validated PhenoAge formula plus a Claude AI synthesis across all your scan data, including five sub-ages: metabolic, vascular, bone & muscle, inflammation and kidney." },
+  { q: "Is a doctor consultation included?", a: "Yes. Every ZenScan includes a physician consultation to walk you through your findings, plus 12 months of access to Zeno AI for follow-up questions any time." },
 ];
 
 // ── Page ───────────────────────────────────────────────────────────────────
@@ -122,9 +136,9 @@ export default function HomePage() {
                 <em className="not-italic text-zen-700">Until they aren&apos;t.</em>
               </h1>
               <p className="mt-8 max-w-lg text-lg leading-relaxed text-gray-500">
-                ZenScan screens 300+ conditions across 10 organ systems —
-                combining MRI, DEXA, CT and 100+ biomarkers into one
-                AI-powered report. Before symptoms appear.
+                ZenScan screens 400+ parameters across 15 organ systems —
+                combining MRI, USG, DEXA, CT, X-Ray, ECG and 150+ lab
+                biomarkers into one AI-powered report. Before symptoms appear.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-4">
                 <Link
@@ -150,15 +164,15 @@ export default function HomePage() {
             {/* Right — Organ score panel (completely different from phone mockup) */}
             <div className="hidden lg:block self-end">
               <div className="rounded-t-3xl bg-zen-900 px-6 pt-8 pb-0 text-white shadow-2xl">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-5">ZenScore — Organ Risk Overview</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-5">ZenScore — 15 Organ Systems</p>
                 <div className="space-y-3 mb-6">
                   {[
                     { organ: "Heart Health", score: 42, sev: "critical", bar: "bg-red-500" },
+                    { organ: "Endocrine & Metabolic", score: 58, sev: "major", bar: "bg-amber-400" },
+                    { organ: "Liver & Digestive", score: 81, sev: "normal", bar: "bg-emerald-400" },
                     { organ: "Brain & Cognition", score: 91, sev: "normal", bar: "bg-emerald-400" },
-                    { organ: "Liver & Gut", score: 78, sev: "normal", bar: "bg-emerald-400" },
-                    { organ: "Endocrine", score: 63, sev: "major", bar: "bg-amber-400" },
-                    { organ: "Lung & Respiratory", score: 88, sev: "normal", bar: "bg-emerald-400" },
-                    { organ: "Kidney & Urinary", score: 85, sev: "normal", bar: "bg-emerald-400" },
+                    { organ: "Bone, Muscle & Joint", score: 74, sev: "minor", bar: "bg-yellow-400" },
+                    { organ: "Vascular Health", score: 88, sev: "normal", bar: "bg-emerald-400" },
                   ].map((r) => (
                     <div key={r.organ}>
                       <div className="flex justify-between text-[12px] mb-1">
@@ -194,12 +208,12 @@ export default function HomePage() {
       <div className="bg-zen-900 py-3 overflow-hidden">
         <div className="flex gap-12 animate-[marquee_30s_linear_infinite] whitespace-nowrap w-max">
           {[
-            "Full-Body MRI", "DEXA Scan", "CT Calcium Score", "Lung CT",
-            "12-Lead ECG", "100+ Biomarkers", "ZenScore Report",
-            "Zeno AI", "10 Organ Systems", "300+ Conditions Screened",
-            "Full-Body MRI", "DEXA Scan", "CT Calcium Score", "Lung CT",
-            "12-Lead ECG", "100+ Biomarkers", "ZenScore Report",
-            "Zeno AI", "10 Organ Systems", "300+ Conditions Screened",
+            "Full-Body MRI", "Whole-Abdomen USG", "DEXA Body Composition", "CT Calcium Score",
+            "Chest X-Ray", "12-Lead ECG", "150+ Lab Biomarkers", "ZenScore",
+            "ZenAge — Biological Age", "Zeno AI", "15 Organ Systems", "400+ Parameters Tracked",
+            "Full-Body MRI", "Whole-Abdomen USG", "DEXA Body Composition", "CT Calcium Score",
+            "Chest X-Ray", "12-Lead ECG", "150+ Lab Biomarkers", "ZenScore",
+            "ZenAge — Biological Age", "Zeno AI", "15 Organ Systems", "400+ Parameters Tracked",
           ].map((item, i) => (
             <span key={i} className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
               {item}
@@ -208,6 +222,40 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* ── TAILORED FOR SEX ──────────────────────────────────────────────── */}
+      <section className="bg-cream py-12 border-b border-black/5">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid items-center gap-6 lg:grid-cols-[1fr_2fr]">
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-zen-600">
+                <span className="h-px w-8 bg-zen-500 inline-block align-middle mr-3" />
+                Tailored to your sex
+              </p>
+              <h3 className="font-display text-[clamp(1.4rem,2.5vw,1.9rem)] leading-tight text-zen-900">
+                Different bodies. Different tests.
+              </h3>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-black/5">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600 mb-1">For men</p>
+                <p className="text-[13px] text-gray-600 leading-snug">
+                  Adds prostate ultrasound, PSA blood test, total + free testosterone, SHBG and IGF-1.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-black/5">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-pink-600 mb-1">For women</p>
+                <p className="text-[13px] text-gray-600 leading-snug">
+                  Adds Mammography (40+), Pelvic + Transvaginal USG, Pap Smear, HPV DNA, AMH, FSH, LH, Estradiol.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-[11px] text-gray-400">
+            Sex-irrelevant tests are filtered out so your report only shows what actually applies to you. <Link href="/science" className="font-semibold text-zen-700 hover:text-zen-900">See the full list →</Link>
+          </p>
+        </div>
+      </section>
 
       {/* ── WHAT WE FIND ──────────────────────────────────────────────────── */}
       <section className="py-28 bg-cream">
@@ -265,15 +313,15 @@ export default function HomePage() {
                 The protocol
               </p>
               <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-[1.1] text-white">
-                Six scans.<br />
+                Eight scans.<br />
                 One session.<br />
                 Zero guesswork.
               </h2>
             </div>
             <p className="text-white/50 leading-relaxed text-lg self-end pb-2">
-              ZenCore Protocol runs six complementary diagnostic modalities simultaneously,
-              then synthesises every result into a single unified health picture — something
-              no single specialist visit could replicate.
+              ZenCore Protocol runs eight complementary diagnostic modalities in a single
+              visit, then synthesises every result into a unified 15-organ health picture —
+              something no single specialist visit could replicate.
             </p>
           </div>
 
@@ -303,7 +351,8 @@ export default function HomePage() {
 
           <div className="mt-12 pt-8 border-t border-white/8">
             <p className="text-[12px] text-white/30">
-              * Full-Body MRI and DEXA involve zero ionising radiation. CT Calcium Score is equivalent to 1–2 chest X-rays.
+              * MRI, Ultrasound and DEXA involve zero ionising radiation. CT Calcium Score and Chest X-Ray combined ≈ 4 months of natural background exposure.
+              Mammography included for women 40+, optional below.
             </p>
           </div>
         </div>
