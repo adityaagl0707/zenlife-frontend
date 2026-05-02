@@ -754,23 +754,23 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 title="By Test"
                 subtitle="See the breakdown of every test performed in this scan"
               />
-              <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden divide-y divide-gray-100">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {rows.map((r) => {
                   const abnormal = r.counts.critical + r.counts.major + r.counts.minor;
                   return (
                     <button
                       key={r.key}
                       onClick={() => openTestPanel(r.key, r.label, r.icon)}
-                      className="w-full px-5 py-4 flex items-center gap-4 hover:bg-cream/60 transition-colors text-left group"
+                      className="rounded-2xl bg-white ring-1 ring-black/5 px-4 py-3.5 flex items-center gap-3 hover:bg-cream/60 hover:ring-black/10 hover:-translate-y-0.5 transition-all text-left group shadow-sm"
                     >
                       <span className="text-[20px] flex-shrink-0">{r.icon}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-bold text-zen-900 leading-snug">{r.label}</p>
+                        <p className="text-[13px] font-bold text-zen-900 leading-snug truncate">{r.label}</p>
                         <p className="text-[11px] text-gray-400 mt-0.5">
                           {r.total} {r.total === 1 ? "finding" : "findings"}
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-1.5 flex-shrink-0 justify-end">
+                      <div className="flex flex-wrap gap-1 flex-shrink-0 justify-end max-w-[140px]">
                         {abnormal === 0 ? (
                           <span className="inline-flex items-center gap-1 text-emerald-600 text-[11px] font-semibold">
                             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -784,10 +784,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                               return (
                                 <span
                                   key={sev}
-                                  className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold", cfg.bg, cfg.text)}
+                                  className={cn("inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold", cfg.bg, cfg.text)}
                                 >
                                   <span className={cn("h-1 w-1 rounded-full", cfg.bar)} />
-                                  {r.counts[sev]} {cfg.label.toLowerCase()}
+                                  {r.counts[sev]}
                                 </span>
                               );
                             })
