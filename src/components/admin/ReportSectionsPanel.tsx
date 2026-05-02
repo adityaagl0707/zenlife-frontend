@@ -812,6 +812,10 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
   // matches what the user sees in the parameter list.
   const sectionFillCounts: Record<string, number> = {};
   const sectionTotalCounts: Record<string, number> = {};
+  // Cross-section severity tally — feeds the strip in the header so the
+  // operator sees at a glance how many criticals / majors / etc. exist
+  // across the whole report.
+  const grandSev = { critical: 0, major: 0, minor: 0, normal: 0, pending: 0 };
   for (const st of visibleSections) {
     const data = allSections[st];
     if (!data) { sectionFillCounts[st] = 0; sectionTotalCounts[st] = 0; continue; }
@@ -822,7 +826,16 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
       const sec = TWIN_SECONDARY[d.name];
       const pv = (params[d.name] as ParamValue | undefined)?.value;
       const sv = sec ? (params[sec] as ParamValue | undefined)?.value : undefined;
-      return acc + (isFilledValue(pv) || isFilledValue(sv) ? 1 : 0);
+      const filled = isFilledValue(pv) || isFilledValue(sv);
+      if (filled) {
+        const primary = params[d.name] as ParamValue | undefined;
+        const secondary = sec ? (params[sec] as ParamValue | undefined) : undefined;
+        const sev = (primary?.severity || secondary?.severity || "normal") as keyof typeof grandSev;
+        if (sev in grandSev) grandSev[sev]++;
+      } else {
+        grandSev.pending++;
+      }
+      return acc + (filled ? 1 : 0);
     }, 0);
   }
   const grandFilled = visibleSections.reduce((s, st) => s + sectionFillCounts[st], 0);
@@ -848,6 +861,23 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
         </div>
         <div className="mt-3 h-2 w-full rounded-full bg-gray-100 overflow-hidden">
           <div className="h-full bg-gradient-to-r from-zen-400 via-zen-600 to-zen-900 transition-all" style={{ width: `${grandPct}%` }} />
+        </div>
+
+        {/* Severity totals across all sections */}
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+          {([
+            ["critical", "🔴", "Critical", "bg-red-50 text-red-700 ring-red-100"],
+            ["major",    "🟠", "Major",    "bg-orange-50 text-orange-700 ring-orange-100"],
+            ["minor",    "🟡", "Minor",    "bg-yellow-50 text-yellow-700 ring-yellow-100"],
+            ["normal",   "🟢", "Normal",   "bg-emerald-50 text-emerald-700 ring-emerald-100"],
+            ["pending",  "⏳", "Pending",  "bg-gray-50 text-gray-500 ring-gray-100"],
+          ] as const).map(([key, icon, label, cls]) => (
+            <span key={key} className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1", cls)}>
+              <span className="text-[10px]">{icon}</span>
+              <span>{label}</span>
+              <span className="font-bold tabular-nums">{grandSev[key]}</span>
+            </span>
+          ))}
         </div>
       </div>
 
