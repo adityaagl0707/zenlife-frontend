@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Send, Loader2, Leaf } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -57,20 +57,34 @@ function Message({ msg }: { msg: ChatMessage }) {
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const reportId = parseInt(id);
+
+  // Deep-link state from a finding card: ?q=<question>&send=1&return=<context>&finding=<name>
+  const seedQuestion = searchParams?.get("q") || "";
+  const autoSend = searchParams?.get("send") === "1";
+  const returnContext = searchParams?.get("return") || "";
+  const returnFinding = searchParams?.get("finding") || "";
+  const backHref = returnContext
+    ? `/report/${reportId}?return=${encodeURIComponent(returnContext)}${returnFinding ? `&finding=${encodeURIComponent(returnFinding)}` : ""}`
+    : `/report/${reportId}`;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [starters, setStarters] = useState<string[]>(FALLBACK_STARTERS);
+  const autoSentRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isLoggedIn()) { router.push("/login"); return; }
     api.chat
       .history(reportId)
-      .then(setMessages)
+      .then((history) => {
+        setMessages(history);
+        if (seedQuestion && !autoSend) setInput(seedQuestion);
+      })
       .finally(() => setLoading(false));
     api.chat
       .starters(reportId)
@@ -78,7 +92,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         if (d?.starters?.length) setStarters(d.starters.slice(0, 4));
       })
       .catch(() => { /* keep fallback */ });
-  }, [reportId, router]);
+  }, [reportId, router, seedQuestion, autoSend]);
+
+  // Auto-send the seed question once history has loaded so the patient
+  // lands directly on Zeno's answer instead of a pre-filled composer.
+  useEffect(() => {
+    if (!loading && autoSend && seedQuestion && !autoSentRef.current) {
+      autoSentRef.current = true;
+      send(seedQuestion);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, autoSend, seedQuestion]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -112,7 +136,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       <header className="bg-cream/95 backdrop-blur-md border-b border-black/5">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
           <Link
-            href={`/report/${reportId}`}
+            href={backHref}
             className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5 text-gray-500 hover:text-zen-900 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />

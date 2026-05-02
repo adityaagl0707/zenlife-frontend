@@ -1,6 +1,6 @@
 "use client";
 import { X, FlaskConical, Stethoscope, Lightbulb, Sparkles, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Finding, OrganScore } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -189,17 +189,31 @@ function ValueGauge({ value, range, severity }: { value: string | null; range: s
 
 // ── Finding card ────────────────────────────────────────────────────────────
 
-function FindingCard({ finding, reportId }: { finding: Finding; reportId: number }) {
-  const [expanded, setExpanded] = useState(false);
+function FindingCard({ finding, reportId, returnContext, autoExpand }: {
+  finding: Finding;
+  reportId: number;
+  /** Encodes drawer state so the Ask Zeno chat back-link can restore it. */
+  returnContext: string;
+  /** When true, the card mounts already expanded (used after returning from chat). */
+  autoExpand?: boolean;
+}) {
+  const [expanded, setExpanded] = useState(!!autoExpand);
   const sev = getSev(finding.severity);
   const hasDetails = !!(finding.clinical_findings || finding.recommendations);
+  // Scroll the auto-expanded card into view when returning from chat.
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (autoExpand && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [autoExpand]);
 
   const testTypeLabel = finding.test_type
     ?.replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase()) ?? "";
 
   return (
-    <div className={cn(
+    <div ref={cardRef} className={cn(
       "bg-white rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 border-l-[4px] transition-shadow hover:shadow-md",
       sev.border
     )}>
@@ -279,7 +293,7 @@ function FindingCard({ finding, reportId }: { finding: Finding; reportId: number
             onClick={() => setExpanded(!expanded)}
             className="w-full flex items-center justify-between px-4 py-2 border-t border-gray-50 text-[10px] font-semibold text-gray-400 hover:bg-gray-50 transition-colors"
           >
-            <span>{expanded ? "Hide details" : "What this means + what to do"}</span>
+            <span>{expanded ? "Hide interpretation" : "Interpretation & Recommendation"}</span>
             <svg
               width="12" height="12" viewBox="0 0 12 12" fill="none"
               className={cn("transition-transform duration-200", expanded && "rotate-180")}
@@ -294,7 +308,7 @@ function FindingCard({ finding, reportId }: { finding: Finding; reportId: number
                 <div className="px-4 py-2.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Stethoscope className="h-3 w-3 text-blue-400" />
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">What this means</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Interpretation</p>
                   </div>
                   {/* Diagnosis stays as a single sentence — interpretation
                       reads better as connected prose. */}
@@ -305,7 +319,7 @@ function FindingCard({ finding, reportId }: { finding: Finding; reportId: number
                 <div className="px-4 py-2.5 border-t border-gray-50">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Lightbulb className="h-3 w-3 text-amber-400" />
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">What to do</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Recommendation</p>
                   </div>
                   {/* Action items render as bullets when the AI returned 2+
                       steps (split by ' / ' or sentence boundary), otherwise
@@ -318,7 +332,7 @@ function FindingCard({ finding, reportId }: { finding: Finding; reportId: number
                 <Link
                   href={`/report/${reportId}/chat?q=${encodeURIComponent(
                     `Tell me more about my ${finding.name} of ${finding.value || "—"}${finding.unit ? " " + finding.unit : ""} — what should I do?`
-                  )}`}
+                  )}&send=1&return=${encodeURIComponent(returnContext)}&finding=${encodeURIComponent(finding.name)}`}
                   className="flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-gray-50 text-[11px] font-bold text-zen-700 hover:bg-zen-50/50 transition-colors"
                 >
                   <Sparkles className="h-3 w-3" />
@@ -340,12 +354,17 @@ interface Props {
   organ: OrganScore | null;
   findings: Finding[];
   reportId: number;
+  /** Opaque token the chat page reflects back so we can return to this exact
+   *  drawer state. Built by the parent (e.g. "organ:Heart Health"). */
+  returnContext?: string;
+  /** When set, auto-expand the matching finding card on mount and scroll to it. */
+  expandFinding?: string | null;
   onClose: () => void;
 }
 
 const TABS = ["all", "critical", "major", "minor", "normal"] as const;
 
-export default function FindingsPanel({ organ, findings, reportId, onClose }: Props) {
+export default function FindingsPanel({ organ, findings, reportId, returnContext, expandFinding, onClose }: Props) {
   const [filter, setFilter] = useState<typeof TABS[number]>("all");
 
   // Merge CBC twin pairs (% + absolute count) into single cards.
@@ -450,7 +469,15 @@ export default function FindingsPanel({ organ, findings, reportId, onClose }: Pr
             </div>
           ) : (
             <div className="p-4 space-y-3">
-              {filtered.map((f) => <FindingCard key={f.id} finding={f} reportId={reportId} />)}
+              {filtered.map((f) => (
+                <FindingCard
+                  key={f.id}
+                  finding={f}
+                  reportId={reportId}
+                  returnContext={returnContext || ""}
+                  autoExpand={expandFinding ? expandFinding.toLowerCase() === (f.name || "").toLowerCase() : false}
+                />
+              ))}
             </div>
           )}
         </div>

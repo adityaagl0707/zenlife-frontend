@@ -347,6 +347,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const [panelOrgan, setPanelOrgan] = useState<OrganScore | null>(null);
   const [panelFindings, setPanelFindings] = useState<Finding[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
+  // When the chat back-link drops us back here it sets ?return=<context>
+  // &finding=<name>; we re-open the same drawer and scroll/expand that card.
+  const [expandFinding, setExpandFinding] = useState<string | null>(null);
+  const [panelContextLabel, setPanelContextLabel] = useState<string>("");
   const [stickyNav, setStickyNav] = useState(false);
   const [bodyAge, setBodyAge] = useState<BodyAge | null>(null);
   const [adminPublishing, setAdminPublishing] = useState(false);
@@ -391,32 +395,29 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  function openOrganPanel(organ: OrganScore) {
-    // Use findingsForOrgan so the drawer applies the SAME canonicalization
-    // (alias → primary, dedupe by canonical) the organ-card counter uses.
-    // Plain lowercase matching missed CBC twins and aliased rows, so e.g.
-    // a "Lymphocytes" finding counted as 1 minor on the card but vanished
-    // from the drawer because the organ map lists "lymphocytes - count".
+  function openOrganPanel(organ: OrganScore, opts?: { expandFinding?: string | null }) {
     const organFindings = findingsForOrgan(organ.organ_name, visibleFindings);
     setPanelOrgan(organ);
     setPanelFindings(organFindings);
+    setPanelContextLabel(`organ:${organ.organ_name}`);
+    setExpandFinding(opts?.expandFinding ?? null);
     setPanelOpen(true);
   }
 
-  function openSeverityPanel(sev: string) {
+  function openSeverityPanel(sev: string, opts?: { expandFinding?: string | null }) {
     const sevFindings = visibleFindings.filter((f) => f.severity?.toLowerCase() === sev);
     if (sevFindings.length) {
       setPanelOrgan(null);
       setPanelFindings(sevFindings);
+      setPanelContextLabel(`severity:${sev}`);
+      setExpandFinding(opts?.expandFinding ?? null);
       setPanelOpen(true);
     }
   }
 
-  function openTestPanel(testKey: string, label: string, icon: string) {
+  function openTestPanel(testKey: string, label: string, icon: string, opts?: { expandFinding?: string | null }) {
     const testFindings = visibleFindings.filter((f) => f.test_type?.toLowerCase() === testKey);
     if (!testFindings.length) return;
-    // Construct a fake "organ" so FindingsPanel shows the test name in its
-    // header — keeps the drawer component contract unchanged.
     setPanelOrgan({
       id: -1,
       organ_name: label,
@@ -429,8 +430,41 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       icon,
     });
     setPanelFindings(testFindings);
+    setPanelContextLabel(`test:${testKey}|${label}|${icon}`);
+    setExpandFinding(opts?.expandFinding ?? null);
     setPanelOpen(true);
   }
+
+  // Restore drawer state from chat back-link: ?return=<context>&finding=<name>
+  // Context tokens: "organ:<organName>", "severity:<sev>", "test:<key>|<label>|<icon>", "all".
+  useEffect(() => {
+    if (loading) return;
+    const url = new URL(window.location.href);
+    const ret = url.searchParams.get("return");
+    const findingName = url.searchParams.get("finding");
+    if (!ret) return;
+    if (ret === "all") {
+      setPanelOrgan(null);
+      setPanelFindings(visibleFindings);
+      setPanelContextLabel("all");
+      setExpandFinding(findingName);
+      setPanelOpen(true);
+    } else if (ret.startsWith("organ:")) {
+      const organName = ret.slice(6);
+      const o = organs.find((x) => x.organ_name === organName);
+      if (o) openOrganPanel(o, { expandFinding: findingName });
+    } else if (ret.startsWith("severity:")) {
+      openSeverityPanel(ret.slice(9), { expandFinding: findingName });
+    } else if (ret.startsWith("test:")) {
+      const [key, label, icon] = ret.slice(5).split("|");
+      openTestPanel(key, label || key, icon || "🧪", { expandFinding: findingName });
+    }
+    // Clean URL so a refresh doesn't re-open
+    url.searchParams.delete("return");
+    url.searchParams.delete("finding");
+    window.history.replaceState({}, "", url.toString());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   // ── Loading / error ──────────────────────────────────────────────────────
 
@@ -679,7 +713,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => { setPanelOrgan(null); setPanelFindings(visibleFindings); setPanelOpen(true); }}
+                  onClick={() => { setPanelOrgan(null); setPanelFindings(visibleFindings); setPanelContextLabel("all"); setExpandFinding(null); setPanelOpen(true); }}
                   className="inline-flex items-center gap-1.5 rounded-full bg-zen-900 px-4 py-2 text-[11px] font-bold text-white hover:bg-zen-800 transition-colors"
                 >
                   <Activity className="h-3 w-3" /> All {totalFindings} Findings
@@ -759,7 +793,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             subtitle="Click any organ card to explore detailed parameter findings"
             action={
               <button
-                onClick={() => { setPanelOrgan(null); setPanelFindings(visibleFindings); setPanelOpen(true); }}
+                onClick={() => { setPanelOrgan(null); setPanelFindings(visibleFindings); setPanelContextLabel("all"); setExpandFinding(null); setPanelOpen(true); }}
                 className="flex-shrink-0 flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-4 py-2 text-[12px] font-semibold text-gray-600 hover:bg-cream transition-colors"
               >
                 All {totalFindings} findings <ChevronRight className="h-3.5 w-3.5" />
@@ -970,6 +1004,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           organ={panelOrgan}
           findings={panelFindings}
           reportId={reportId}
+          returnContext={panelContextLabel}
+          expandFinding={expandFinding}
           onClose={() => setPanelOpen(false)}
         />
       )}
