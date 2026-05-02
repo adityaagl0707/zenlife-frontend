@@ -179,67 +179,79 @@ const PRIORITY_SECTION_CONFIG = [
 ];
 
 function PriorityCard({ priority }: { priority: HealthPriority }) {
-  const [expanded, setExpanded] = useState(false);
+  // Each category (Diet, Exercise, Sleep, Supplements) opens / closes
+  // independently — admin asked for vertical layout with per-category
+  // expand-collapse so the patient can drill into one area at a time.
+  const [openCats, setOpenCats] = useState<Set<string>>(new Set());
+  const toggle = (label: string) =>
+    setOpenCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+
   const sections = PRIORITY_SECTION_CONFIG.filter(
     (s) => Array.isArray(priority[s.key]) && (priority[s.key] as string[]).length > 0
   );
 
   return (
     <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
-      <div className="p-4 border-b border-black/5">
+      {/* Header — number + title + why */}
+      <div className="p-5">
         <div className="flex items-start gap-3">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-zen-900 text-white text-[12px] font-black">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-zen-900 text-white text-[13px] font-black">
             {priority.priority_order}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-[13px] font-bold text-zen-900 leading-snug">{priority.title}</h3>
-            <p className="mt-1 text-[11px] text-gray-500 leading-snug">{priority.why_important}</p>
+            <h3 className="text-[15px] font-bold text-zen-900 leading-snug">{priority.title}</h3>
+            <p className="mt-1.5 text-[12px] text-gray-500 leading-relaxed">{priority.why_important}</p>
           </div>
         </div>
       </div>
 
-      {!expanded && sections.length > 0 && (
-        <div className="px-5 py-3 flex flex-wrap gap-2">
-          {sections.map((s) => (
-            <span key={s.label} className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", s.bg, s.color)}>
-              <s.icon className="h-3 w-3" />
-              {s.label}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {expanded && sections.length > 0 && (
-        <div className="divide-y divide-black/5">
-          {sections.map((s) => (
-            <div key={s.label} className="px-4 py-3">
-              <div className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 mb-2", s.bg)}>
-                <s.icon className={cn("h-3 w-3", s.color)} />
-                <p className={cn("text-[9px] font-bold uppercase tracking-[0.15em]", s.color)}>{s.label}</p>
-              </div>
-              <ul className="space-y-1">
-                {(priority[s.key] as string[]).map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[11px] text-gray-700 leading-snug">
-                    <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-emerald-400 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      )}
-
+      {/* Vertical category list — each opens / closes independently */}
       {sections.length > 0 && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full px-5 py-3 border-t border-black/5 text-[11px] font-semibold text-gray-400 hover:bg-cream transition-colors flex items-center justify-between"
-        >
-          <span>{expanded ? "Collapse" : "View recommendations"}</span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={cn("transition-transform duration-200", expanded && "rotate-180")}>
-            <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        <div className="border-t border-black/5 divide-y divide-black/5">
+          {sections.map((s) => {
+            const isOpen = openCats.has(s.label);
+            const items = priority[s.key] as string[];
+            return (
+              <div key={s.label}>
+                <button
+                  onClick={() => toggle(s.label)}
+                  className="w-full px-5 py-3 flex items-center gap-3 hover:bg-cream/60 transition-colors text-left"
+                >
+                  <span className={cn("inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg", s.bg)}>
+                    <s.icon className={cn("h-3.5 w-3.5", s.color)} />
+                  </span>
+                  <span className={cn("flex-1 text-[12px] font-bold uppercase tracking-[0.15em]", s.color)}>
+                    {s.label}
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-semibold">
+                    {items.length} {items.length === 1 ? "tip" : "tips"}
+                  </span>
+                  <svg
+                    width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    className={cn("text-gray-400 transition-transform duration-200", isOpen && "rotate-180")}
+                  >
+                    <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {isOpen && (
+                  <ul className="px-5 pb-4 pl-[60px] space-y-2">
+                    {items.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700 leading-relaxed">
+                        <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-emerald-400 mt-1" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -340,6 +352,26 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       setPanelFindings(sevFindings);
       setPanelOpen(true);
     }
+  }
+
+  function openTestPanel(testKey: string, label: string, icon: string) {
+    const testFindings = findings.filter((f) => f.test_type?.toLowerCase() === testKey);
+    if (!testFindings.length) return;
+    // Construct a fake "organ" so FindingsPanel shows the test name in its
+    // header — keeps the drawer component contract unchanged.
+    setPanelOrgan({
+      id: -1,
+      organ_name: label,
+      severity: "normal",
+      risk_label: "",
+      critical_count: 0,
+      major_count: 0,
+      minor_count: 0,
+      normal_count: 0,
+      icon,
+    });
+    setPanelFindings(testFindings);
+    setPanelOpen(true);
   }
 
   // ── Loading / error ──────────────────────────────────────────────────────
@@ -690,6 +722,86 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           </div>
         </section>
 
+        {/* ── Findings by Test ────────────────────────────────────────── */}
+        {(() => {
+          const TEST_CONFIG = [
+            { key: "blood",         label: "Blood Report",     icon: "🩸" },
+            { key: "urine",         label: "Urine Analysis",   icon: "🧪" },
+            { key: "dexa",          label: "DEXA Scan",        icon: "🦴" },
+            { key: "calcium_score", label: "Calcium Score",    icon: "💛" },
+            { key: "ecg",           label: "ECG Report",       icon: "💓" },
+            { key: "chest_xray",    label: "Chest X-Ray",      icon: "🫁" },
+            { key: "usg",           label: "USG Report",       icon: "🔊" },
+            { key: "mri",           label: "MRI Report",       icon: "🧲" },
+            { key: "mammography",   label: "Mammography",      icon: "🎀" },
+          ];
+          // Roll up findings per test type (only render rows that have data)
+          const rows = TEST_CONFIG.map((t) => {
+            const ts = findings.filter((f) => f.test_type?.toLowerCase() === t.key);
+            const c = { critical: 0, major: 0, minor: 0, normal: 0 } as Record<string, number>;
+            for (const f of ts) {
+              const sev = (f.severity || "normal").toLowerCase();
+              if (sev in c) c[sev]++;
+            }
+            return { ...t, total: ts.length, counts: c };
+          }).filter((r) => r.total > 0);
+
+          if (!rows.length) return null;
+          return (
+            <section id="findings-by-test">
+              <SectionHeading
+                label="Findings"
+                title="By Test"
+                subtitle="See the breakdown of every test performed in this scan"
+              />
+              <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden divide-y divide-gray-100">
+                {rows.map((r) => {
+                  const abnormal = r.counts.critical + r.counts.major + r.counts.minor;
+                  return (
+                    <button
+                      key={r.key}
+                      onClick={() => openTestPanel(r.key, r.label, r.icon)}
+                      className="w-full px-5 py-4 flex items-center gap-4 hover:bg-cream/60 transition-colors text-left group"
+                    >
+                      <span className="text-[20px] flex-shrink-0">{r.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-bold text-zen-900 leading-snug">{r.label}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          {r.total} {r.total === 1 ? "finding" : "findings"}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 flex-shrink-0 justify-end">
+                        {abnormal === 0 ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-600 text-[11px] font-semibold">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            All healthy
+                          </span>
+                        ) : (
+                          (["critical", "major", "minor"] as const)
+                            .filter((sev) => r.counts[sev] > 0)
+                            .map((sev) => {
+                              const cfg = SEV_CONFIG[sev];
+                              return (
+                                <span
+                                  key={sev}
+                                  className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold", cfg.bg, cfg.text)}
+                                >
+                                  <span className={cn("h-1 w-1 rounded-full", cfg.bar)} />
+                                  {r.counts[sev]} {cfg.label.toLowerCase()}
+                                </span>
+                              );
+                            })
+                        )}
+                      </div>
+                      <ChevronRight className="h-3.5 w-3.5 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })()}
+
         {/* ── Health Priorities ───────────────────────────────────────── */}
         {priorities.length > 0 && (
           <section id="priorities">
@@ -698,7 +810,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               title="Your Health Priorities"
               subtitle="A personalised plan generated by Zeno AI based on your scan results"
             />
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3 max-w-3xl">
               {priorities.map((p) => (
                 <PriorityCard key={p.id} priority={p} />
               ))}
