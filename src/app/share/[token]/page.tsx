@@ -1,13 +1,7 @@
 "use client";
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
-import {
-  Download,
-  Loader2,
-  AlertCircle,
-  ShieldCheck,
-} from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { Leaf, Download, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "https://zenlife.health").replace(/\/api\/v1\/?$/, "");
 const BASE = `${API_URL}/api/v1`;
@@ -70,7 +64,9 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
       <header className="border-b border-black/5 bg-cream/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="flex items-center gap-2">
-            <Logo size={28} priority />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
+              <Leaf className="h-3.5 w-3.5 text-white" />
+            </div>
             <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
           </Link>
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 rounded-full px-3 py-1">

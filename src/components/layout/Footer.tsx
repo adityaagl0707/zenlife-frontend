@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Logo } from "@/components/Logo";
+import { Leaf } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -9,7 +9,9 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2">
-              <Logo size={28} priority />
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
+                <Leaf className="h-3.5 w-3.5 text-white" />
+              </div>
               <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
             </Link>
             <p className="mt-4 text-[13px] leading-relaxed text-gray-500">

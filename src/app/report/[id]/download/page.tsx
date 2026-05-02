@@ -2,17 +2,7 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Download,
-  FileText,
-  Share2,
-  CheckCircle2,
-  Loader2,
-  Copy,
-  Check,
-} from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { ArrowLeft, Download, FileText, Share2, CheckCircle2, Loader2, Leaf, Copy, Check } from "lucide-react";
 import { api, Report } from "@/lib/api";
 import { isLoggedIn, getToken } from "@/lib/auth";
 
@@ -151,7 +141,9 @@ export default function DownloadPage({ params }: { params: Promise<{ id: string 
       <header className="fixed inset-x-0 top-0 z-50 bg-cream/95 backdrop-blur-md border-b border-black/5">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="flex items-center gap-2">
-            <Logo size={28} priority />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
+              <Leaf className="h-3.5 w-3.5 text-white" />
+            </div>
             <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
           </Link>
           <Link

@@ -2,11 +2,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import {
-  Menu,
-  X,
-} from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { Menu, X, Leaf } from "lucide-react";
 import { clearToken, isLoggedIn } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +44,9 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Logo size={28} priority />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
+            <Leaf className="h-3.5 w-3.5 text-white" />
+          </div>
           <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
         </Link>
 
