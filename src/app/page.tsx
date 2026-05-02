@@ -104,7 +104,7 @@ const FAQS = [
   { q: "How long is the scan?", a: "The full ZenScan session is 3–4 hours. Your report is delivered within 5–7 business days, with a physician consultation included." },
   { q: "Is the scan radiation-free?", a: "Mostly yes. MRI, DEXA and Ultrasound involve zero ionising radiation. The Calcium Score CT and Chest X-Ray involve very low radiation — combined dose roughly equivalent to 4 months of natural background exposure." },
   { q: "What does the ZenScore mean?", a: "ZenScore is a 0–100 health-intelligence index calculated across 15 organ systems. It synthesises imaging findings, body composition and 150+ biomarkers into one comparable number." },
-  { q: "What is ZenAge?", a: "ZenAge is your biological age — derived from the validated PhenoAge formula plus a Claude AI synthesis across all your scan data, including five sub-ages: metabolic, vascular, bone & muscle, inflammation and kidney." },
+  { q: "What is ZenAge?", a: "ZenAge is your biological age — derived from the validated PhenoAge formula plus an AI-driven synthesis across all your scan data, including five sub-ages: metabolic, vascular, bone & muscle, inflammation and kidney." },
   { q: "Is a doctor consultation included?", a: "Yes. Every ZenScan includes a physician consultation to walk you through your findings, plus 12 months of access to Zeno AI for follow-up questions any time." },
 ];
 

@@ -188,7 +188,7 @@ export default function ZenAgeCard({ bodyAge }: { bodyAge: BodyAge }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-bold text-violet-700 leading-tight">ZenAge — Biological Age</p>
-          <p className="text-[10px] text-gray-400">Powered by PhenoAge (Levine 2018) + Claude AI</p>
+          <p className="text-[10px] text-gray-400">Powered by PhenoAge (Levine 2018) + AI synthesis</p>
         </div>
         <ConfidenceBadge confidence={confidence} />
       </div>

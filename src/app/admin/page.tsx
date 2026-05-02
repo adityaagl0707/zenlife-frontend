@@ -893,7 +893,7 @@ function BodyAgeSection({ reportId }: { reportId: number }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <SectionHeader title="ZenAge — Biological Age" subtitle="Uses PhenoAge formula (9 blood biomarkers) + Claude AI synthesis across all scan data." />
+        <SectionHeader title="ZenAge — Biological Age" subtitle="Uses PhenoAge formula (9 blood biomarkers) + AI-driven synthesis across all scan data." />
         <button onClick={calculate} disabled={loading}
           className="flex items-center gap-1.5 rounded-full bg-violet-700 px-4 py-2 text-xs font-bold text-white hover:bg-violet-600 disabled:opacity-50 flex-shrink-0">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <span>🧬</span>}

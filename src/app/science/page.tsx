@@ -61,7 +61,7 @@ const REPORT_FEATURES = [
   },
   {
     title: "ZenAge — Biological Age",
-    body: "Built on the validated PhenoAge formula (9 blood biomarkers) plus a Claude AI synthesis across all your scan data. Returns 5 sub-ages: metabolic, vascular, bone & muscle, inflammation and kidney.",
+    body: "Built on the validated PhenoAge formula (9 blood biomarkers) plus an AI-driven synthesis across all your scan data. Returns 5 sub-ages: metabolic, vascular, bone & muscle, inflammation and kidney.",
   },
   {
     title: "15-Organ Analysis",
@@ -76,7 +76,7 @@ const REPORT_FEATURES = [
 const PROTOCOL_STEPS = [
   { step: "01", title: "Pre-Scan Consultation", desc: "A health coordinator reviews your history, medications, family history and goals. At-home blood and urine collection scheduled the day before." },
   { step: "02", title: "ZenScan Day (3–4 hrs)", desc: "All 8 modalities completed in a single visit — MRI, USG, DEXA, Calcium Score CT, Chest X-Ray, ECG, lab samples (already drawn), Mammography (women 40+)." },
-  { step: "03", title: "AI Analysis by ZenCore", desc: "Every value across 400+ parameters is extracted, gender-filtered, severity-classified and routed to the right organ system. Claude AI generates clinical findings and recommendations per parameter." },
+  { step: "03", title: "AI Analysis by ZenCore", desc: "Every value across 400+ parameters is extracted, gender-filtered, severity-classified and routed to the right organ system. Our AI engine generates clinical findings and recommendations per parameter." },
   { step: "04", title: "Physician Review", desc: "A ZenLife physician reviews every finding, edits AI-generated notes where needed, then publishes the report. Average turnaround: 5–7 business days." },
   { step: "05", title: "ZenReport + Zeno AI", desc: "You get the full digital report, your top 3 personalised health priorities, a 30-min physician video consultation and 12 months of 24/7 access to Zeno — your AI health assistant that has read your entire report." },
   { step: "06", title: "Doctor-Shareable Link", desc: "Generate a JWT-secured 7-day link from any device — share your full report with a specialist or family physician without giving up your account credentials." },
@@ -105,7 +105,7 @@ export default function SciencePage() {
               ZenLife&apos;s ZenCore Protocol combines 8 diagnostic modalities and 400+ parameters
               into a unified 15-organ health picture — built on decades of peer-reviewed research
               in preventive medicine, oncology, cardiology and metabolomics, and cross-referenced
-              by Claude AI against thousands of clinical studies.
+              by our AI engine against thousands of clinical studies.
             </p>
           </div>
         </div>
@@ -270,10 +270,11 @@ export default function SciencePage() {
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Zeno AI</p>
                 <h2 className="font-display text-[2rem] text-zen-900">Your personal health AI.</h2>
                 <p className="mt-4 text-[15px] text-gray-500 leading-relaxed">
-                  Zeno is built on Anthropic&apos;s Claude — given full read-access to your ZenReport,
-                  organ scores, biomarkers, body composition and biological age. Ask any question
-                  about your findings, in plain English, any time. 4 personalised conversation
-                  starters appear the moment you open it, generated from your unique results.
+                  Zeno is your personal AI health assistant — given full read-access to your
+                  ZenReport, organ scores, biomarkers, body composition and biological age. Ask
+                  any question about your findings, in plain English, any time. 4 personalised
+                  conversation starters appear the moment you open it, generated from your unique
+                  results.
                 </p>
               </div>
             </div>
