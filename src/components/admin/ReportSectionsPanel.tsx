@@ -36,6 +36,15 @@ type ParamDef = { name: string; unit: string; normal: string };
 type ParamValue = { value: string; severity: string; clinical_findings: string; recommendations: string };
 type SectionData = { key_findings: string; parameters: Record<string, ParamValue>; param_definitions: ParamDef[] };
 
+// A row counts as "filled" only when it carries a real measurement —
+// blanks, dashes, "Not Found", "—" are all treated as Pending so the
+// admin can decide to fill or Ignore them in the pre-generate drawer.
+const PLACEHOLDER_VALUES = new Set(["", "—", "-", "n/a", "na", "not found", "not measured"]);
+export function isFilledValue(v?: string | null): boolean {
+  const s = (v ?? "").trim().toLowerCase();
+  return !!s && !PLACEHOLDER_VALUES.has(s);
+}
+
 // CBC differential twin pairs — same biological measurement reported as both
 // percentage AND absolute count. The absolute count is the clinically actionable
 // value (used for diagnoses like neutropenia); the % shows relative composition.
@@ -78,7 +87,7 @@ function ParamRow({
   const [classifying, setClassifying] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isPending = !val.value?.trim();
+  const isPending = !isFilledValue(val.value);
   const sev = isPending ? "pending" : (val.severity || "normal");
 
   // Auto-classify severity when value changes
@@ -192,7 +201,7 @@ function ParamPairRow({
   onSecondaryChange: (v: ParamValue) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const hasAny = !!(primaryVal.value?.trim() || secondaryVal.value?.trim());
+  const hasAny = isFilledValue(primaryVal.value) || isFilledValue(secondaryVal.value);
   const sev = !hasAny ? "pending" : (primaryVal.severity || "normal");
   const borderColor = sev === "critical" ? "border-red-200" : sev === "major" ? "border-orange-200" : sev === "minor" ? "border-yellow-200" : "border-gray-100";
 
@@ -319,7 +328,7 @@ function SectionPanel({
 
   const filteredDefs = visibleDefs.filter((d) => {
     const secondaryName = TWIN_SECONDARY[d.name];
-    const hasValue = !!(params[d.name]?.value?.trim() || (secondaryName && params[secondaryName]?.value?.trim()));
+    const hasValue = isFilledValue(params[d.name]?.value) || (secondaryName ? isFilledValue(params[secondaryName]?.value) : false);
     const effectiveSev = hasValue ? (params[d.name]?.severity || "normal") : "pending";
     const matchSev = filterSev === "all" || effectiveSev === filterSev;
     const matchSearch = d.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -331,7 +340,7 @@ function SectionPanel({
   const counts = { critical: 0, major: 0, minor: 0, normal: 0 };
   for (const d of visibleDefs) {
     const secondaryName = TWIN_SECONDARY[d.name];
-    const hasValue = !!(params[d.name]?.value?.trim() || (secondaryName && params[secondaryName]?.value?.trim()));
+    const hasValue = isFilledValue(params[d.name]?.value) || (secondaryName ? isFilledValue(params[secondaryName]?.value) : false);
     if (!hasValue) continue;
     const s = (params[d.name]?.severity || "normal") as keyof typeof counts;
     counts[s] = (counts[s] || 0) + 1;
@@ -460,8 +469,7 @@ function SectionPanel({
     const sec = TWIN_SECONDARY[d.name];
     const pv = params[d.name]?.value;
     const sv = sec ? params[sec]?.value : undefined;
-    const has = (v?: string) => !!v && v !== "Not Found";
-    return acc + (has(pv) || has(sv) ? 1 : 0);
+    return acc + (isFilledValue(pv) || isFilledValue(sv) ? 1 : 0);
   }, 0);
   const totalCount = visibleDefs.length;
 
@@ -814,8 +822,7 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
       const sec = TWIN_SECONDARY[d.name];
       const pv = (params[d.name] as ParamValue | undefined)?.value;
       const sv = sec ? (params[sec] as ParamValue | undefined)?.value : undefined;
-      const has = (v?: string) => !!v && v !== "Not Found";
-      return acc + (has(pv) || has(sv) ? 1 : 0);
+      return acc + (isFilledValue(pv) || isFilledValue(sv) ? 1 : 0);
     }, 0);
   }
   const grandFilled = visibleSections.reduce((s, st) => s + sectionFillCounts[st], 0);
