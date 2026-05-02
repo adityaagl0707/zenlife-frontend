@@ -2,35 +2,34 @@ import { Finding } from "./api";
 
 export const ORGAN_PARAM_MAP: Record<string, string[]> = {
   "Heart Health": [
-    // Coronary calcium (Agatston by vessel) — heart-only per organ split
+    // Coronary calcium (Agatston by vessel)
     "agatston score (total)","lad agatston score","lad calcified plaques","lad volume (mm³)",
     "lck agatston score","lck calcified plaques","lck volume (mm³)","lm agatston score",
     "lm calcified plaques","lm volume (mm³)","rca agatston score","rca calcified plaques",
     "rca volume (mm³)",
     // Cardiac chamber / ECG
-    "cardia","heart rate","nt-probnp","p-wave duration","pericardium","pr interval",
+    "heart rate","nt-probnp","p-wave duration","pericardium","pr interval",
     "qrs duration","qt interval (qtc)","rhythm","st segment",
-    // Cardiac risk markers (lipid panel + cardiac proteins)
+    // Cardiac risk markers (lipid panel + cardiac proteins + homocysteine)
     "apoa1","apolipoprotein b","hdl cholesterol","hdl/ldl ratio","homocysteine levels",
     "ldl cholesterol","ldl/hdl ratio","lipoprotein (a)","non-hdl cholesterol",
     "total cholesterol","total cholesterol / hdl","triglycerides","triglycerides / hdl",
     "vldl cholesterol",
   ],
 
-  // Merged: Endocrine & Metabolic + Hormonal & Vitality
   "Endocrine & Hormonal Health": [
-    "adrenals","android fat","android:gynoid ratio","anti-tg","apolipoprotein b",
-    "average blood glucose","bmi","body fat","c-peptide",
-    "cortisol","dhea","estradiol (e2)","fasting blood glucose","fat free mass",
-    "fat mass index","free testosterone","gynoid fat","hba1c","hdl cholesterol",
-    "hdl/ldl ratio","homa-ir","igf-1","insulin",
-    "ketone","ldl cholesterol","ldl/hdl ratio","lipoprotein (a)",
-    "liver fat %","liver steatosis grade","non-hdl cholesterol","psa","reverse t3",
-    "shbg","testosterone","thyroid","thyroid lesions","thyroid volume",
-    "thyroxine (t4) free","total cholesterol","total cholesterol / hdl","total fat mass",
-    "tpo","triglycerides","triglycerides / hdl","triiodothyronine (t3) free",
-    "trunk fat mass","trunk:limb fat ratio","tsh","visceral fat level",
-    "visceral fat mass","vldl cholesterol",
+    // Body composition (DEXA) lives here as the canonical metabolic signal
+    "android fat","android:gynoid ratio","bmi","body fat","fat free mass",
+    "fat mass index","gynoid fat","total fat mass","trunk fat mass","trunk:limb fat ratio",
+    "visceral fat level","visceral fat mass",
+    // Glucose / insulin axis
+    "average blood glucose","c-peptide","fasting blood glucose","hba1c","homa-ir",
+    "insulin","ketone",
+    // Thyroid axis
+    "anti-tg","reverse t3","thyroid","thyroid lesions","thyroid volume",
+    "thyroxine (t4) free","tpo","triiodothyronine (t3) free","tsh",
+    // Adrenal / growth (sex hormones moved to Men's / Women's; lipids to Heart)
+    "adrenals","cortisol","dhea","igf-1",
   ],
 
   "Liver & Digestive Health": [
@@ -43,21 +42,18 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "liver and digestive health: congenital causes","liver and digestive health: degenerative","liver and digestive health: infective-active","liver and digestive health: inflammation",
     "liver and digestive health: ischemic causes","liver and digestive health: post-infective","liver and digestive health: tumours","liver fat %",
     "liver outline & size","liver parenchyma","liver steatosis grade","liver: focal changes",
-    "liver: hepatic veins","liver: portal vein","mesentric vessels","nasopharynx",
+    "liver: hepatic veins","liver: portal vein","nasopharynx",
     "oesophagus","oropharynx","pancreas duct","pancreas outline",
     "pancreatic parenchyma","parotid glands","peri-rectal fat","peripancreatic region",
     "periportal region","perisplenic region","peritoneum","pt / inr",
-    "rectum & rectosigmoid","retroperitoneum","serum albumin/globulin","spleen parenchyma",
-    "spleen size & outline","splenic hilum","splenic vessels","total bilirubin",
-    "total protein",
+    "rectum & rectosigmoid","serum albumin/globulin","spleen parenchyma",
+    "spleen size & outline","splenic hilum","total bilirubin","total protein",
   ],
 
-  // Merged: Brain & Cognitive + Mental & Stress Resilience
   "Brain & Mental Health": [
     "basal ganglia","brain: congenital causes","brain: degenerative","brain: infective-active",
     "brain: ischemic causes","brain: post-infective","brain: tumours","cerebral white matter",
-    "frontal sinuses","globes","homocysteine levels",
-    "lacrimal glands","maxillary sinuses","meninges",
+    "frontal sinuses","globes","lacrimal glands","maxillary sinuses","meninges",
     "midbrain","optic nerve","orbital fat","orbits",
     "paranasal sinuses","pons","veins","ventricles","white matter hyperintensity",
     // Cross-system rollup labels (not real findings; filtered by isRollup)
@@ -82,11 +78,11 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "blood urea nitrogen (bun)","bun / creatinine ratio","casts","chloride",
     "collecting system","colour","cortico-sinus signals","creatinine",
     "creatinine urine","crystals","cystatin c","egfr",
-    "epithelial cells","kidneys size, outline","leucocyte esterase","mesentric vessels",
+    "epithelial cells","kidneys size, outline","leucocyte esterase",
     "mucus","nitrite","other pelvic viscera","parasite",
     "pelvic cavity","pelvic lymphnodes","pelvic soft tissues","peri-renal fat",
-    "peri-renal spaces","ph","potassium","psoas muscles",
-    "pth","red blood cells","renal cortical thickness","renal vessels",
+    "peri-renal spaces","ph","potassium",
+    "pth","red blood cells","renal cortical thickness",
     "retroperitoneum","sodium","specific gravity","ua (uric acid)",
     "urea (calculated)","urea/creatinine ratio","ureters","urinary bilirubin",
     "urinary bladder contents","urinary bladder contour","urinary bladder perivesical fat","urinary bladder walls",
@@ -94,46 +90,48 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "urine albumin/creatinine","urine blood","urine ketone","yeast",
   ],
 
-  // Merged: General Health, Blood & Nutrients + Inflammation & Immune Health
   "Blood, Immunity & Nutrition": [
-    "abdominal lymph nodes","abdominal wall","android fat","android:gynoid ratio",
-    "anti-tg","basophils","basophils - count","bmi","body fat","calcium","cea","copper",
-    "d-dimer","eosinophils","eosinophils - count","esr","ferritin","fibrinogen",
-    "folate (b9)","gynoid fat","hematocrit","hemoglobin","homocysteine levels","hs-crp",
-    "ige","immature granulocytes","immature granulocytes %","iron","iron % saturation",
-    "ldh","lean mass","left breast: lymphadenopathy","lymphocytes","lymphocytes - count",
-    "magnesium, rbc","mch","mchc","mcv","monocytes","monocytes - count","mpv",
-    "neck lymphnodes","neutrophils","neutrophils - count","nucleated rbc","nucleated rbc %",
-    "pdw","peritoneum","phosphorus","platelet count","plateletcrit (pct)","plcr","rbc",
-    "rdw","rdw-sd","right breast: lymphadenopathy","rsmi","selenium","tibc","uibc",
-    "visceral fat mass","vitamin a","vitamin b12","vitamin d","vitamin e","wbc","zinc",
+    // CBC + differential
+    "rbc","wbc","hemoglobin","hematocrit","mcv","rdw","rdw-sd","mch","mchc",
+    "platelet count","plateletcrit (pct)","mpv","pdw","plcr",
+    "nucleated rbc","nucleated rbc %","immature granulocytes","immature granulocytes %",
+    "basophils","basophils - count","eosinophils","eosinophils - count",
+    "lymphocytes","lymphocytes - count","monocytes","monocytes - count",
+    "neutrophils","neutrophils - count",
+    // Inflammation / immunity (vascular clotting markers moved to Vascular)
+    "abdominal lymph nodes","esr","hs-crp","ige",
+    "left breast: lymphadenopathy","right breast: lymphadenopathy","neck lymphnodes",
+    // Iron studies
+    "ferritin","iron","iron % saturation","tibc","uibc",
+    // Vitamins & minerals
+    "calcium","copper","folate (b9)","ldh","magnesium, rbc",
+    "selenium","vitamin a","vitamin b12","vitamin d","vitamin e","zinc",
   ],
 
   "Bone, Muscle & Joint Health": [
     "appendicular lean mass","asmi","cord, conus","facets",
-    "fat free mass","foramina","lean mass","mandible",
-    "marrow signals","maxilla","mineral bone density (t-score)","mineral bone density (z-score)",
-    "paravertebral muscles","phosphorus","psoas muscles","pth",
-    "rsmi","spinal canal","spine curvature","spine: discs",
-    "spine: ligaments","spine: signal intensities","total fat mass","total lean mass",
-    "trunk fat mass","trunk lean","vertebral bodies","vertebral body alignment",
-    "visceral fat level",
+    "foramina","lean mass","mandible","marrow signals","maxilla",
+    "mineral bone density (t-score)","mineral bone density (z-score)",
+    "paravertebral muscles","phosphorus","psoas muscles","rsmi",
+    "spinal canal","spine curvature","spine: discs",
+    "spine: ligaments","spine: signal intensities","total lean mass",
+    "trunk lean","vertebral bodies","vertebral body alignment",
   ],
 
   "Lung & Respiratory Health": [
     "airway condition","copd / emphysema","glottis","lung nodules & masses",
     "lung parenchyma","lung vasculature","lung volume","mediastinal lymph nodes",
-    "mediastinum & lymph nodes","neck lymphnodes","pleural cavities","pleural space",
+    "mediastinum & lymph nodes","pleural cavities","pleural space",
     "pneumonia / infection","pulmonary fibrosis","subglottis","supra-glottis",
   ],
 
   "Vascular Health": [
-    // Peripheral vessels only — coronary calcium lives under Heart Health
+    // Peripheral vessels (coronary calcium lives under Heart Health)
     "aorta and branches","carotid cimt","carotid plaque score","iliac vessels",
     "ivc and tributaries","mesentric vessels","neck vessels","other major vessels",
     "renal vessels","splenic vessels","superior venacava",
-    // Vascular-risk lab markers
-    "d-dimer","fat mass index","fibrinogen","homa-ir","pt / inr","trunk:limb fat ratio",
+    // Clotting / thrombosis markers
+    "d-dimer","fibrinogen",
   ],
 
   // Hormonal & Vitality Health merged into Endocrine & Hormonal Health
