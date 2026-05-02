@@ -124,6 +124,16 @@ export interface Report {
   summary?: string;
   finding_counts?: { critical: number; major: number; minor: number; normal: number };
   ignored_params?: string[];
+  health_plan?: HealthPlan | null;
+}
+
+export interface HealthPlan {
+  medical_consultations?: string[];
+  diet_plan?: string[];
+  exercise_plan?: string[];
+  sleep_and_stress?: string[];
+  supplements?: string[];
+  monitoring?: string[];
 }
 
 export interface OrganScore {
