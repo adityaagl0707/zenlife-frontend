@@ -204,22 +204,6 @@ function PriorityCard({ priority }: { priority: HealthPriority }) {
 
       {sections.length > 0 && (
         <>
-          {/* Collapsed: row of category chips so the patient can see at a
-              glance which areas this priority touches. */}
-          {!expanded && (
-            <div className="px-5 pb-4 flex flex-wrap items-center gap-2">
-              {sections.map((s) => (
-                <span
-                  key={s.label}
-                  className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold", s.bg, s.color)}
-                >
-                  <s.icon className="h-3.5 w-3.5" />
-                  {s.label}
-                </span>
-              ))}
-            </div>
-          )}
-
           {/* Expanded: all categories shown side-by-side as columns */}
           {expanded && (
             <div className="border-t border-black/5 px-5 py-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
