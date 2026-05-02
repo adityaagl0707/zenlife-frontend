@@ -2,16 +2,17 @@ import { Finding } from "./api";
 
 export const ORGAN_PARAM_MAP: Record<string, string[]> = {
   "Heart Health": [
-    "agatston score (total)","aorta and branches","apoa1","apolipoprotein b",
-    "cardia","carotid cimt","carotid plaque score","hdl cholesterol",
-    "hdl/ldl ratio","heart rate","homocysteine levels","iliac vessels",
-    "ivc and tributaries","lad agatston score","lad calcified plaques","lad volume (mm³)",
-    "lck agatston score","lck calcified plaques","lck volume (mm³)","ldl cholesterol",
-    "ldl/hdl ratio","lipoprotein (a)","lm agatston score","lm calcified plaques",
-    "lm volume (mm³)","neck vessels","non-hdl cholesterol","nt-probnp",
-    "other major vessels","p-wave duration","pericardium","pr interval",
-    "qrs duration","qt interval (qtc)","rca agatston score","rca calcified plaques",
-    "rca volume (mm³)","rhythm","st segment","superior venacava",
+    // Coronary calcium (Agatston by vessel) — heart-only per organ split
+    "agatston score (total)","lad agatston score","lad calcified plaques","lad volume (mm³)",
+    "lck agatston score","lck calcified plaques","lck volume (mm³)","lm agatston score",
+    "lm calcified plaques","lm volume (mm³)","rca agatston score","rca calcified plaques",
+    "rca volume (mm³)",
+    // Cardiac chamber / ECG
+    "cardia","heart rate","nt-probnp","p-wave duration","pericardium","pr interval",
+    "qrs duration","qt interval (qtc)","rhythm","st segment",
+    // Cardiac risk markers (lipid panel + cardiac proteins)
+    "apoa1","apolipoprotein b","hdl cholesterol","hdl/ldl ratio","homocysteine levels",
+    "ldl cholesterol","ldl/hdl ratio","lipoprotein (a)","non-hdl cholesterol",
     "total cholesterol","total cholesterol / hdl","triglycerides","triglycerides / hdl",
     "vldl cholesterol",
   ],
@@ -111,15 +112,6 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
     "vitamin d","vitamin e","wbc","zinc",
   ],
 
-  "Reproductive Health": [
-    "ca-125","cervix","cortisol","dhea",
-    "endometrium","estradiol (e2)","free testosterone","hpv dna test",
-    "other pelvic viscera","ovaries","pap smear","pelvic cavity",
-    "pelvic lymphnodes","pelvic soft tissues","pelvic ultrasound","prostate",
-    "prostate volume","psa","seminal vesicles","testosterone",
-    "uterus",
-  ],
-
   "Bone, Muscle & Joint Health": [
     "appendicular lean mass","asmi","cord, conus","facets",
     "fat free mass","foramina","lean mass","mandible",
@@ -139,15 +131,12 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
   ],
 
   "Vascular Health": [
-    "agatston score (total)","aorta and branches","apoa1","apolipoprotein b",
-    "carotid cimt","carotid plaque score","d-dimer","fat mass index",
-    "fibrinogen","homa-ir","iliac vessels","ivc and tributaries",
-    "lad agatston score","lad calcified plaques","lad volume (mm³)","lck agatston score",
-    "lck calcified plaques","lck volume (mm³)","lipoprotein (a)","lm agatston score",
-    "lm calcified plaques","lm volume (mm³)","mesentric vessels","neck vessels",
-    "nt-probnp","other major vessels","p-wave duration","pt / inr",
-    "rca agatston score","rca calcified plaques","rca volume (mm³)","renal vessels",
-    "splenic vessels","superior venacava","trunk:limb fat ratio",
+    // Peripheral vessels only — coronary calcium lives under Heart Health
+    "aorta and branches","carotid cimt","carotid plaque score","iliac vessels",
+    "ivc and tributaries","mesentric vessels","neck vessels","other major vessels",
+    "renal vessels","splenic vessels","superior venacava",
+    // Vascular-risk lab markers
+    "d-dimer","fat mass index","fibrinogen","homa-ir","pt / inr","trunk:limb fat ratio",
   ],
 
   "Hormonal & Vitality Health": [
