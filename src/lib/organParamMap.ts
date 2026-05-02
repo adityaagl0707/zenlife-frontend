@@ -193,23 +193,94 @@ export const ORGAN_PARAM_MAP: Record<string, string[]> = {
 
 export type SeverityCounts = { critical: number; major: number; minor: number; normal: number };
 
+// ── Canonicalization ────────────────────────────────────────────────────────
+// Many parameter names appear in the map under multiple aliases or with minor
+// punctuation/spacing differences from how the AI extractor stores them.
+// `ALIASES` collapses every synonym → a single canonical name so we can do
+// exact-match lookups without losing data.
+const ALIASES: Record<string, string> = {
+  // Calcium scoring — vendor reports break Agatston by vessel
+  "agaston score": "agatston score",
+  "agatston score (total)": "agatston score",
+  "lad agatston score": "agatston score",
+  "lck agatston score": "agatston score",
+  "lm agatston score": "agatston score",
+  "rca agatston score": "agatston score",
+  // Glucose
+  "fbs": "fasting blood glucose",
+  "glucose": "fasting blood glucose",
+  "fasting glucose": "fasting blood glucose",
+  "fasting blood sugar": "fasting blood glucose",
+  "fasting blood glucose test": "fasting blood glucose",
+  // Liver enzymes
+  "alk phos": "alp",
+  "alkaline phosphatase": "alp",
+  // Inflammation
+  "crp": "hs-crp",
+  "c reactive protein": "hs-crp",
+  "c-reactive protein": "hs-crp",
+  // CBC differential — both percentage names and absolute count
+  "lymph %": "lymphocytes",
+  "lymphocyte %": "lymphocytes",
+  "lymphocytes %": "lymphocytes",
+  "lymphocyte percentage": "lymphocytes",
+  "lymphocytes - count": "lymphocytes",
+  // Lipids
+  "non hdl cholesterol": "non-hdl cholesterol",
+  "ldl/hdl ratio": "hdl/ldl ratio",
+  // Vascular
+  "aorta & branches": "aorta and branches",
+  // MRI organ-prefixed variants
+  "hepatic veins": "liver: hepatic veins",
+  // Bone density spacing typo
+  "mineral bone density(t-score)": "mineral bone density (t-score)",
+  "mineral bone density(z-score)": "mineral bone density (z-score)",
+  // Spine spacing typo (map has space, DB has none)
+  "spine: ligaments": "spine:ligaments",
+  "spine: signal intensities": "spine:signal intensities",
+  // Reproductive / Men's
+  "prostate": "prostate size (if male)",
+  "prostate volume": "prostate size (if male)",
+};
+
+// Rollup labels are radiology category headers (e.g. "Heart Health:
+// degenerative") — they're never imported as discrete findings, so they
+// inflate the "X not imported" count and mislead the user. Strip them
+// from both the total and the matcher.
+const ROLLUP_RX = /:\s*(degenerative|post-infective|inflammation|traumatic issues|tumours|infective-active|ischemic causes|congenital causes)\b/i;
+const isRollup = (p: string): boolean =>
+  ROLLUP_RX.test(p) || p === "general health, blood and nutrients";
+
+const canon = (s: string): string => {
+  const k = s.toLowerCase().trim();
+  return ALIASES[k] ?? k;
+};
+
+const canonicalParamSet = (organName: string): Set<string> => {
+  const params = ORGAN_PARAM_MAP[organName] ?? [];
+  return new Set(params.filter(p => !isRollup(p)).map(canon));
+};
+
 export function organTotalParams(organName: string): number {
-  return new Set(ORGAN_PARAM_MAP[organName] ?? []).size;
+  return canonicalParamSet(organName).size;
 }
 
 export function computeOrganCounts(organName: string, findings: Finding[]): SeverityCounts {
-  const params = ORGAN_PARAM_MAP[organName];
-  if (!params || !findings.length) return { critical: 0, major: 0, minor: 0, normal: 0 };
-
-  const paramSet = new Set(params);
   const counts: SeverityCounts = { critical: 0, major: 0, minor: 0, normal: 0 };
+  if (!findings.length) return counts;
 
+  const wanted = canonicalParamSet(organName);
+  if (!wanted.size) return counts;
+
+  // Deduplicate by canonical name so multi-vessel rows (e.g. 5 Agatston
+  // entries → one "agatston score") don't inflate the count beyond the total.
+  const seen = new Set<string>();
   for (const f of findings) {
-    const key = f.name.toLowerCase().trim();
-    if (paramSet.has(key)) {
-      const sev = f.severity as keyof SeverityCounts;
-      if (sev in counts) counts[sev]++;
-    }
+    const key = canon(f.name);
+    if (!wanted.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    const sev = f.severity as keyof SeverityCounts;
+    if (sev in counts) counts[sev]++;
   }
   return counts;
 }
