@@ -606,7 +606,7 @@ export default function ReportSectionsPanel({ reportId, patientGender, onSaved: 
       // Load saved parameters for all sections
       const [savedRes, defsRes] = await Promise.all([
         fetch(`${API}/api/v1/admin/reports/${reportId}/sections`),
-        fetch(`${API}/api/v1/admin/section-params`),
+        fetch(`${API}/api/v1/admin/section-params?report_id=${reportId}`),
       ]);
       const saved = savedRes.ok ? await savedRes.json() : {};
       const defs = defsRes.ok ? await defsRes.json() : { parameters: {} };
