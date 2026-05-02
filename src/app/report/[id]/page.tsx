@@ -179,18 +179,10 @@ const PRIORITY_SECTION_CONFIG = [
 ];
 
 function PriorityCard({ priority }: { priority: HealthPriority }) {
-  // Each category (Diet, Exercise, Sleep, Supplements) opens / closes
-  // independently — admin asked for vertical layout with per-category
-  // expand-collapse so the patient can drill into one area at a time.
-  const [openCats, setOpenCats] = useState<Set<string>>(new Set());
-  const toggle = (label: string) =>
-    setOpenCats((prev) => {
-      const next = new Set(prev);
-      if (next.has(label)) next.delete(label);
-      else next.add(label);
-      return next;
-    });
-
+  // Single toggle that expands ALL category columns at once — admin asked
+  // for the row layout so Diet / Exercise / Sleep / Supplements sit
+  // side-by-side rather than stacked, and reveal together on click.
+  const [expanded, setExpanded] = useState(false);
   const sections = PRIORITY_SECTION_CONFIG.filter(
     (s) => Array.isArray(priority[s.key]) && (priority[s.key] as string[]).length > 0
   );
@@ -210,48 +202,64 @@ function PriorityCard({ priority }: { priority: HealthPriority }) {
         </div>
       </div>
 
-      {/* Vertical category list — each opens / closes independently */}
       {sections.length > 0 && (
-        <div className="border-t border-black/5 divide-y divide-black/5">
-          {sections.map((s) => {
-            const isOpen = openCats.has(s.label);
-            const items = priority[s.key] as string[];
-            return (
-              <div key={s.label}>
-                <button
-                  onClick={() => toggle(s.label)}
-                  className="w-full px-5 py-3 flex items-center gap-3 hover:bg-cream/60 transition-colors text-left"
+        <>
+          {/* Collapsed: row of category chips so the patient can see at a
+              glance which areas this priority touches. */}
+          {!expanded && (
+            <div className="px-5 pb-4 flex flex-wrap items-center gap-2">
+              {sections.map((s) => (
+                <span
+                  key={s.label}
+                  className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold", s.bg, s.color)}
                 >
-                  <span className={cn("inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg", s.bg)}>
-                    <s.icon className={cn("h-3.5 w-3.5", s.color)} />
-                  </span>
-                  <span className={cn("flex-1 text-[12px] font-bold uppercase tracking-[0.15em]", s.color)}>
-                    {s.label}
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-semibold">
-                    {items.length} {items.length === 1 ? "tip" : "tips"}
-                  </span>
-                  <svg
-                    width="12" height="12" viewBox="0 0 12 12" fill="none"
-                    className={cn("text-gray-400 transition-transform duration-200", isOpen && "rotate-180")}
-                  >
-                    <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                {isOpen && (
-                  <ul className="px-5 pb-4 pl-[60px] space-y-2">
-                    {items.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700 leading-relaxed">
-                        <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-emerald-400 mt-1" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  <s.icon className="h-3.5 w-3.5" />
+                  {s.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Expanded: all categories shown side-by-side as columns */}
+          {expanded && (
+            <div className="border-t border-black/5 px-5 py-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {sections.map((s) => {
+                const items = priority[s.key] as string[];
+                return (
+                  <div key={s.label}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className={cn("inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg", s.bg)}>
+                        <s.icon className={cn("h-3.5 w-3.5", s.color)} />
+                      </span>
+                      <span className={cn("text-[11px] font-bold uppercase tracking-[0.15em]", s.color)}>
+                        {s.label}
+                      </span>
+                    </div>
+                    <ul className="space-y-2">
+                      {items.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700 leading-relaxed">
+                          <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-emerald-400 mt-1" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Single toggle — opens / closes all columns at once */}
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full px-5 py-3 border-t border-black/5 text-[11px] font-semibold text-gray-500 hover:bg-cream/60 transition-colors flex items-center justify-between"
+          >
+            <span>{expanded ? "Hide recommendations" : "View recommendations"}</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={cn("transition-transform duration-200", expanded && "rotate-180")}>
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </>
       )}
     </div>
   );
@@ -810,7 +818,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               title="Your Health Priorities"
               subtitle="A personalised plan generated by Zeno AI based on your scan results"
             />
-            <div className="space-y-3 max-w-3xl">
+            <div className="space-y-3">
               {priorities.map((p) => (
                 <PriorityCard key={p.id} priority={p} />
               ))}
