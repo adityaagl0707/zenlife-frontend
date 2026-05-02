@@ -2,7 +2,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Leaf, Phone, ShieldCheck, ArrowRight, Loader2, UserPlus, KeyRound, CheckCircle2, Lock } from "lucide-react";
+import {
+  Phone,
+  ShieldCheck,
+  ArrowRight,
+  Loader2,
+  UserPlus,
+  KeyRound,
+  CheckCircle2,
+  Lock,
+} from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { api } from "@/lib/api";
 import { setToken } from "@/lib/auth";
 
@@ -188,9 +198,7 @@ export default function LoginPage() {
       <header className="border-b border-black/5 bg-cream/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
-              <Leaf className="h-3.5 w-3.5 text-white" />
-            </div>
+            <Logo size={28} priority />
             <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
           </Link>
           <Link

@@ -1,8 +1,35 @@
 "use client";
-import { X, FlaskConical, Stethoscope, Lightbulb } from "lucide-react";
+import { X, FlaskConical, Stethoscope, Lightbulb, Sparkles, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 import { Finding, OrganScore } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+/** Render a "What to do" payload as either a single paragraph (one action)
+ *  or a checklist of bullets (multiple actions). The AI service returns a
+ *  string; we split on common multi-step delimiters so legacy data without
+ *  arrays still gets the bullet treatment when it deserves it. */
+function RecommendationItems({ text }: { text: string }) {
+  // Split on " / ", " | ", "; " or sentence boundary. Keep single-sentence
+  // recommendations as a paragraph — bullets would feel forced.
+  const parts = text
+    .split(/(?:\s\/\s|\s\|\s|;\s+|(?<=[.!?])\s+(?=[A-Z]))/)
+    .map((s) => s.trim().replace(/^[-•*]\s*/, ""))
+    .filter(Boolean);
+  if (parts.length <= 1) {
+    return <p className="text-[11px] text-gray-700 leading-snug">{text}</p>;
+  }
+  return (
+    <ul className="space-y-1">
+      {parts.map((p, i) => (
+        <li key={i} className="flex items-start gap-2 text-[11px] text-gray-700 leading-snug">
+          <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-amber-400" />
+          <span>{p}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 // CBC differential twins — % and absolute count are the same biological
 // measurement. Merge them into one card so the patient doesn't see what
@@ -162,7 +189,7 @@ function ValueGauge({ value, range, severity }: { value: string | null; range: s
 
 // ── Finding card ────────────────────────────────────────────────────────────
 
-function FindingCard({ finding }: { finding: Finding }) {
+function FindingCard({ finding, reportId }: { finding: Finding; reportId: number }) {
   const [expanded, setExpanded] = useState(false);
   const sev = getSev(finding.severity);
   const hasDetails = !!(finding.clinical_findings || finding.recommendations);
@@ -269,6 +296,8 @@ function FindingCard({ finding }: { finding: Finding }) {
                     <Stethoscope className="h-3 w-3 text-blue-400" />
                     <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">What this means</p>
                   </div>
+                  {/* Diagnosis stays as a single sentence — interpretation
+                      reads better as connected prose. */}
                   <p className="text-[11px] text-gray-700 leading-snug">{finding.clinical_findings}</p>
                 </div>
               )}
@@ -278,8 +307,24 @@ function FindingCard({ finding }: { finding: Finding }) {
                     <Lightbulb className="h-3 w-3 text-amber-400" />
                     <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">What to do</p>
                   </div>
-                  <p className="text-[11px] text-gray-700 leading-snug">{finding.recommendations}</p>
+                  {/* Action items render as bullets when the AI returned 2+
+                      steps (split by ' / ' or sentence boundary), otherwise
+                      a single paragraph. Mirrors prescription style:
+                      diagnosis-as-prose, plan-as-checklist. */}
+                  <RecommendationItems text={finding.recommendations} />
                 </div>
+              )}
+              {sev.label !== "Normal" && (
+                <Link
+                  href={`/report/${reportId}/chat?q=${encodeURIComponent(
+                    `Tell me more about my ${finding.name} of ${finding.value || "—"}${finding.unit ? " " + finding.unit : ""} — what should I do?`
+                  )}`}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-gray-50 text-[11px] font-bold text-zen-700 hover:bg-zen-50/50 transition-colors"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  Ask Zeno about this
+                  <ChevronRight className="h-3 w-3" />
+                </Link>
               )}
             </div>
           )}
@@ -294,12 +339,13 @@ function FindingCard({ finding }: { finding: Finding }) {
 interface Props {
   organ: OrganScore | null;
   findings: Finding[];
+  reportId: number;
   onClose: () => void;
 }
 
 const TABS = ["all", "critical", "major", "minor", "normal"] as const;
 
-export default function FindingsPanel({ organ, findings, onClose }: Props) {
+export default function FindingsPanel({ organ, findings, reportId, onClose }: Props) {
   const [filter, setFilter] = useState<typeof TABS[number]>("all");
 
   // Merge CBC twin pairs (% + absolute count) into single cards.
@@ -404,7 +450,7 @@ export default function FindingsPanel({ organ, findings, onClose }: Props) {
             </div>
           ) : (
             <div className="p-4 space-y-3">
-              {filtered.map((f) => <FindingCard key={f.id} finding={f} />)}
+              {filtered.map((f) => <FindingCard key={f.id} finding={f} reportId={reportId} />)}
             </div>
           )}
         </div>

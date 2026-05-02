@@ -22,8 +22,8 @@ import {
   Shield,
   Stethoscope,
   Bot,
-  Leaf,
 } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { api, Report, OrganScore, Finding, HealthPriority, BodyAge, HealthPlan } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -579,9 +579,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       <header className="fixed inset-x-0 top-0 z-50 bg-cream/95 backdrop-blur-md border-b border-black/5">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
-              <Leaf className="h-3.5 w-3.5 text-white" />
-            </div>
+            <Logo size={28} priority />
             <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
           </Link>
           <div className="flex items-center gap-3">
@@ -969,6 +967,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <FindingsPanel
           organ={panelOrgan}
           findings={panelFindings}
+          reportId={reportId}
           onClose={() => setPanelOpen(false)}
         />
       )}

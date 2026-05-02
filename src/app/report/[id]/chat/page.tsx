@@ -1,8 +1,13 @@
 "use client";
 import { useEffect, useRef, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send, Loader2, Leaf } from "lucide-react";
+import {
+  ArrowLeft,
+  Send,
+  Loader2,
+} from "lucide-react";
+import { Logo } from "@/components/Logo";
 import ReactMarkdown from "react-markdown";
 import { api, ChatMessage } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
@@ -20,9 +25,7 @@ function Message({ msg }: { msg: ChatMessage }) {
   return (
     <div className={cn("flex gap-3", isUser ? "flex-row-reverse" : "flex-row")}>
       {!isUser && (
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-zen-800">
-          <Leaf className="h-4 w-4 text-white" />
-        </div>
+        <Logo size={32} className="rounded-full" />
       )}
       <div
         className={cn(
@@ -57,6 +60,7 @@ function Message({ msg }: { msg: ChatMessage }) {
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const reportId = parseInt(id);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -70,7 +74,13 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     if (!isLoggedIn()) { router.push("/login"); return; }
     api.chat
       .history(reportId)
-      .then(setMessages)
+      .then((history) => {
+        setMessages(history);
+        // Deep-link from a finding card: ?q=... pre-fills the composer with
+        // a finding-specific question so the patient can hit send right away.
+        const seed = searchParams?.get("q");
+        if (seed) setInput(seed);
+      })
       .finally(() => setLoading(false));
     api.chat
       .starters(reportId)
@@ -78,7 +88,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         if (d?.starters?.length) setStarters(d.starters.slice(0, 4));
       })
       .catch(() => { /* keep fallback */ });
-  }, [reportId, router]);
+  }, [reportId, router, searchParams]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -117,9 +127,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zen-900">
-            <Leaf className="h-4 w-4 text-white" />
-          </div>
+          <Logo size={32} priority />
           <div className="flex-1">
             <p className="text-[13px] font-bold text-zen-900 leading-none">Zeno</p>
             <p className="text-[10px] text-gray-400">Your personal health AI · ZenLife</p>
@@ -141,9 +149,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             {messages.length === 0 && (
               <div className="text-center space-y-6 py-8">
                 <div className="flex justify-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zen-800">
-                    <Leaf className="h-8 w-8 text-white" />
-                  </div>
+                  <Logo size={64} className="rounded-full" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Hi, I&apos;m Zeno</h2>
@@ -169,9 +175,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
             {sending && (
               <div className="flex gap-3">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-zen-800">
-                  <Leaf className="h-4 w-4 text-white" />
-                </div>
+                <Logo size={32} className="rounded-full" />
                 <div className="rounded-2xl rounded-tl-none bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
                   <div className="flex gap-1.5 items-center h-5">
                     {[0, 1, 2].map((i) => (
