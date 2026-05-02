@@ -116,6 +116,7 @@ export interface Report {
   patient_age?: number;
   patient_gender?: string;
   booking_id: string;
+  zen_id?: string | null;
   coverage_index?: number;
   overall_severity?: string;
   report_date?: string;

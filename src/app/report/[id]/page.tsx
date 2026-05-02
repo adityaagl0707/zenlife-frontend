@@ -536,81 +536,69 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         </div>
       </div>
 
-      {/* ── Overview card ─────────────────────────────────────────────── */}
+      {/* ── Overview card (compact) ────────────────────────────────────── */}
       <div id="overview" className="mx-auto max-w-5xl px-6 pb-6">
-        <div className="rounded-3xl bg-white ring-1 ring-black/5 overflow-hidden">
+        <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
           <div className="h-1 w-full bg-gradient-to-r from-zen-400 via-zen-600 to-zen-900" />
-          <div className="p-6 flex flex-col lg:flex-row gap-6 lg:items-start lg:justify-between">
+          <div className="p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
 
-            {/* Left: status, dates, actions */}
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
+            {/* Left: status pill + IDs + dates inline */}
+            <div className="flex-1 min-w-0 space-y-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-mono text-gray-400">
                 <SeverityPill sev={overallSev} />
-                <span className="text-[11px] text-gray-400 font-mono">{report.booking_id}</span>
+                <span><span className="text-gray-300">Order</span> {report.booking_id}</span>
+                {report.zen_id && (
+                  <span><span className="text-gray-300">Zen ID</span> {report.zen_id}</span>
+                )}
               </div>
 
-              {/* Dates */}
-              <div className="flex flex-wrap gap-3 mb-5">
-                <div className="flex items-center gap-2 rounded-xl bg-cream-dark px-3 py-2">
-                  <Calendar className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                  <div>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em]">Scan Date</p>
-                    <p className="text-[12px] text-zen-900 font-semibold">{formatDate(report.report_date)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 rounded-xl bg-cream-dark px-3 py-2">
-                  <Calendar className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                  <div>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em]">Next Visit</p>
-                    <p className="text-[12px] text-zen-900 font-semibold">{formatDate(report.next_visit)}</p>
-                  </div>
-                </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px]">
+                <span className="inline-flex items-center gap-1.5 text-gray-500">
+                  <Calendar className="h-3 w-3 text-gray-300" />
+                  <span className="text-gray-400">Scan</span>
+                  <span className="font-semibold text-zen-900">{formatDate(report.report_date)}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-gray-500">
+                  <Calendar className="h-3 w-3 text-gray-300" />
+                  <span className="text-gray-400">Next visit</span>
+                  <span className="font-semibold text-zen-900">{formatDate(report.next_visit)}</span>
+                </span>
               </div>
 
-              {/* Action buttons */}
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => { setPanelOrgan(null); setPanelFindings(findings); setPanelOpen(true); }}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-zen-900 px-5 py-2.5 text-[12px] font-bold text-white hover:bg-zen-800 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-zen-900 px-4 py-2 text-[11px] font-bold text-white hover:bg-zen-800 transition-colors"
                 >
-                  <Activity className="h-3.5 w-3.5" />
-                  All {totalFindings} Findings
+                  <Activity className="h-3 w-3" /> All {totalFindings} Findings
                 </button>
                 <Link
                   href={`/report/${reportId}/chat`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-4 py-2.5 text-[12px] font-semibold text-zen-900 hover:bg-cream transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3.5 py-2 text-[11px] font-semibold text-zen-900 hover:bg-cream transition-colors"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  Ask Zeno
+                  <MessageCircle className="h-3 w-3" /> Ask Zeno
                 </Link>
                 <Link
                   href={`/report/${reportId}/download`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-4 py-2.5 text-[12px] font-semibold text-gray-500 hover:bg-cream transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3.5 py-2 text-[11px] font-semibold text-gray-500 hover:bg-cream transition-colors"
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  Download
+                  <Download className="h-3 w-3" /> Download
                 </Link>
               </div>
             </div>
 
-            {/* Right: ZenScore + severity bars */}
-            <div className="flex flex-col items-center gap-5 sm:flex-row lg:flex-col lg:items-end lg:gap-4 flex-shrink-0">
+            {/* Right: ZenScore ring + tight severity legend */}
+            <div className="flex items-center gap-4 flex-shrink-0">
               <ZenScoreRing score={report.coverage_index ?? 0} severity={report.overall_severity ?? "normal"} />
-
-              {/* Severity distribution */}
-              <div className="w-full min-w-[180px] space-y-2">
+              <div className="space-y-1 min-w-[110px]">
                 {(["critical", "major", "minor", "normal"] as const).map((sev) => {
                   const count = sev === "critical" ? critical : sev === "major" ? major : sev === "minor" ? minor : normal;
-                  const pct = totalFindings > 0 ? (count / totalFindings) * 100 : 0;
                   const cfg = SEV_CONFIG[sev];
                   return (
-                    <div key={sev} className="flex items-center gap-2">
+                    <div key={sev} className="flex items-center gap-2 text-[11px]">
                       <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", cfg.bar)} />
-                      <span className="w-12 flex-shrink-0 text-[10px] font-semibold text-gray-500">{cfg.label}</span>
-                      <div className="flex-1 h-1 rounded-full bg-black/6 overflow-hidden">
-                        <div className={cn("h-full rounded-full", cfg.bar)} style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="w-5 flex-shrink-0 text-right text-[12px] font-bold text-zen-900">{count}</span>
+                      <span className="flex-1 text-gray-500">{cfg.label}</span>
+                      <span className="font-bold text-zen-900 tabular-nums">{count}</span>
                     </div>
                   );
                 })}
