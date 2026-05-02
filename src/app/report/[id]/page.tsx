@@ -186,14 +186,14 @@ function PriorityCard({ priority }: { priority: HealthPriority }) {
 
   return (
     <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
-      <div className="p-5 border-b border-black/5">
-        <div className="flex items-start gap-4">
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-zen-900 text-white text-[13px] font-black">
+      <div className="p-4 border-b border-black/5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-zen-900 text-white text-[12px] font-black">
             {priority.priority_order}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-[14px] font-bold text-zen-900 leading-snug">{priority.title}</h3>
-            <p className="mt-1 text-[12px] text-gray-500 leading-relaxed">{priority.why_important}</p>
+            <h3 className="text-[13px] font-bold text-zen-900 leading-snug">{priority.title}</h3>
+            <p className="mt-1 text-[11px] text-gray-500 leading-snug">{priority.why_important}</p>
           </div>
         </div>
       </div>
@@ -212,15 +212,15 @@ function PriorityCard({ priority }: { priority: HealthPriority }) {
       {expanded && sections.length > 0 && (
         <div className="divide-y divide-black/5">
           {sections.map((s) => (
-            <div key={s.label} className="px-5 py-4">
-              <div className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 mb-3", s.bg)}>
-                <s.icon className={cn("h-3.5 w-3.5", s.color)} />
-                <p className={cn("text-[10px] font-bold uppercase tracking-[0.15em]", s.color)}>{s.label}</p>
+            <div key={s.label} className="px-4 py-3">
+              <div className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 mb-2", s.bg)}>
+                <s.icon className={cn("h-3 w-3", s.color)} />
+                <p className={cn("text-[9px] font-bold uppercase tracking-[0.15em]", s.color)}>{s.label}</p>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 {(priority[s.key] as string[]).map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-[12px] text-gray-600 leading-relaxed">
-                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-emerald-400 mt-0.5" />
+                  <li key={i} className="flex items-start gap-2 text-[11px] text-gray-700 leading-snug">
+                    <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-emerald-400 mt-0.5" />
                     {item}
                   </li>
                 ))}
@@ -626,7 +626,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 <Sparkles className="h-4 w-4 text-gray-300" />
               </div>
               <div className="px-6 py-5">
-                <p className="text-[13px] text-gray-600 leading-[1.8]">{report.summary}</p>
+                <p className="text-[12px] text-gray-700 leading-[1.65]">{report.summary}</p>
               </div>
               <div className="px-6 pb-5">
                 <Link

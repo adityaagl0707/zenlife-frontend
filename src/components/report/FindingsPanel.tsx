@@ -239,7 +239,7 @@ function FindingCard({ finding }: { finding: Finding }) {
 
       {/* Description */}
       {finding.description && (
-        <p className="px-4 pb-3 text-[12px] text-gray-500 leading-relaxed">{finding.description}</p>
+        <p className="px-4 pb-3 text-[11px] text-gray-500 leading-snug">{finding.description}</p>
       )}
 
       {/* Expandable details */}
@@ -247,9 +247,9 @@ function FindingCard({ finding }: { finding: Finding }) {
         <>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="w-full flex items-center justify-between px-4 py-2.5 border-t border-gray-50 text-[11px] font-semibold text-gray-400 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2 border-t border-gray-50 text-[10px] font-semibold text-gray-400 hover:bg-gray-50 transition-colors"
           >
-            <span>{expanded ? "Hide details" : "View clinical details"}</span>
+            <span>{expanded ? "Hide details" : "What this means + what to do"}</span>
             <svg
               width="12" height="12" viewBox="0 0 12 12" fill="none"
               className={cn("transition-transform duration-200", expanded && "rotate-180")}
@@ -261,21 +261,21 @@ function FindingCard({ finding }: { finding: Finding }) {
           {expanded && (
             <div className="border-t border-gray-50">
               {finding.clinical_findings && (
-                <div className="px-4 py-3">
-                  <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="px-4 py-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
                     <Stethoscope className="h-3 w-3 text-blue-400" />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Clinical Findings</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">What this means</p>
                   </div>
-                  <p className="text-[12px] text-gray-600 leading-relaxed">{finding.clinical_findings}</p>
+                  <p className="text-[11px] text-gray-700 leading-snug">{finding.clinical_findings}</p>
                 </div>
               )}
               {finding.recommendations && (
-                <div className="px-4 py-3 border-t border-gray-50">
-                  <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="px-4 py-2.5 border-t border-gray-50">
+                  <div className="flex items-center gap-1.5 mb-1">
                     <Lightbulb className="h-3 w-3 text-amber-400" />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Recommendations</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">What to do</p>
                   </div>
-                  <p className="text-[12px] text-gray-600 leading-relaxed">{finding.recommendations}</p>
+                  <p className="text-[11px] text-gray-700 leading-snug">{finding.recommendations}</p>
                 </div>
               )}
             </div>
