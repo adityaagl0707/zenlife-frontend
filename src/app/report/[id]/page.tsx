@@ -428,10 +428,18 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   // counts raw rows (CBC twins separately, pending placeholders included)
   // which mismatched the drawer + button — so we derive everything in one
   // pass here so all four tiles + button + organ cards reconcile exactly.
+  // Rollup labels like "Liver and Digestive Health: Degenerative" are
+  // radiology category headers, not actionable measurements — the organ-card
+  // counter already strips them. Strip from the drawer too so the All-tab
+  // total reconciles with the sum of organ-card counts.
+  const ROLLUP_RX = /:\s*(degenerative|post-infective|inflammation|traumatic issues|tumours|infective-active|ischemic causes|congenital causes)\b/i;
   const visibleFindings = findings.filter((f) => {
     const v = (f.value ?? "").trim().toLowerCase();
     const sev = (f.severity || "").toLowerCase();
-    return v && !["—", "-", "n/a", "na", "not found", "not measured"].includes(v) && sev !== "pending";
+    if (!v || ["—", "-", "n/a", "na", "not found", "not measured"].includes(v)) return false;
+    if (sev === "pending") return false;
+    if (ROLLUP_RX.test(f.name || "")) return false;
+    return true;
   });
   const mergedFindings = mergePairs(visibleFindings);
   const totalFindings = mergedFindings.length;
