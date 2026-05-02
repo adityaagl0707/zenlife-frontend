@@ -28,7 +28,6 @@ import { isLoggedIn } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import OrganGrid from "@/components/report/OrganGrid";
 import FindingsPanel from "@/components/report/FindingsPanel";
-import ZenScoreRing from "@/components/report/ZenScoreRing";
 import { ORGAN_PARAM_MAP } from "@/lib/organParamMap";
 import ZenAgeCard from "@/components/report/ZenAgeCard";
 
@@ -611,58 +610,34 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               </div>
             </div>
 
-            {/* Right: ZenScore ring + tight severity legend */}
-            <div className="flex items-center gap-4 flex-shrink-0">
-              <ZenScoreRing score={report.coverage_index ?? 0} severity={report.overall_severity ?? "normal"} />
-              <div className="space-y-1 min-w-[110px]">
-                {(["critical", "major", "minor", "normal"] as const).map((sev) => {
-                  const count = sev === "critical" ? critical : sev === "major" ? major : sev === "minor" ? minor : normal;
-                  const cfg = SEV_CONFIG[sev];
-                  return (
-                    <div key={sev} className="flex items-center gap-2 text-[11px]">
-                      <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", cfg.bar)} />
-                      <span className="flex-1 text-gray-500">{cfg.label}</span>
-                      <span className="font-bold text-zen-900 tabular-nums">{count}</span>
-                    </div>
-                  );
-                })}
+            {/* Right: Zeno AI Health Assessment — replaces the ring score */}
+            {report.summary && (
+              <div className="sm:max-w-md sm:w-1/2 sm:border-l sm:border-black/5 sm:pl-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900 flex-shrink-0">
+                    <Bot className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold text-zen-900 leading-tight">Zeno — AI Health Assessment</p>
+                    <p className="text-[9px] text-gray-400 leading-tight">Personalised analysis of your ZenScan</p>
+                  </div>
+                  <Sparkles className="h-3.5 w-3.5 text-gray-300 flex-shrink-0" />
+                </div>
+                <p className="text-[12px] text-gray-700 leading-[1.55]">{report.summary}</p>
+                <Link
+                  href={`/report/${reportId}/chat`}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-zen-700 hover:text-zen-900 transition-colors"
+                >
+                  Ask Zeno a follow-up <ChevronRight className="h-3 w-3" />
+                </Link>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* ── Main content ───────────────────────────────────────────────── */}
       <main className={cn("mx-auto max-w-5xl px-6 space-y-12", isAdminPreview ? "pb-32" : "pb-20")}>
-
-        {/* ── AI Summary ──────────────────────────────────────────────── */}
-        {report.summary && (
-          <section>
-            <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
-              <div className="flex items-center gap-3 px-6 py-4 border-b border-black/5 bg-cream">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zen-900">
-                  <Bot className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold text-zen-900 leading-tight">Zeno — AI Health Assessment</p>
-                  <p className="text-[10px] text-gray-400">Personalised analysis of your ZenScan results</p>
-                </div>
-                <Sparkles className="h-4 w-4 text-gray-300" />
-              </div>
-              <div className="px-6 py-5">
-                <p className="text-[12px] text-gray-700 leading-[1.65]">{report.summary}</p>
-              </div>
-              <div className="px-6 pb-5">
-                <Link
-                  href={`/report/${reportId}/chat`}
-                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-zen-700 hover:text-zen-900 transition-colors"
-                >
-                  Ask Zeno a follow-up <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* ── Key stats ───────────────────────────────────────────────── */}
         <section>
