@@ -22,21 +22,7 @@ import {
   Shield,
   Bot,
   Leaf,
-  TrendingUp,
 } from "lucide-react";
-
-// Stitch dossier eyebrow — vertical bar + uppercase label, used before
-// each top-level section on the patient report.
-function DossierEyebrow({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 mb-5 mt-12 first:mt-0">
-      <div className="w-px h-8 bg-[#6d797b]" />
-      <h2 className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#3d494a]">
-        {label}
-      </h2>
-    </div>
-  );
-}
 import { api, Report, OrganScore, Finding, HealthPriority, BodyAge } from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -477,43 +463,30 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
-      {/* ── Top bar (Stitch dossier) ───────────────────────────────────── */}
-      <header className="fixed inset-x-0 top-0 z-50 bg-cream/95 backdrop-blur-md border-b border-[#bcc9ca]/30">
+      {/* ── Top bar ────────────────────────────────────────────────────── */}
+      <header className="fixed inset-x-0 top-0 z-50 bg-cream/95 backdrop-blur-md border-b border-black/5">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#006970]">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zen-900">
               <Leaf className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="font-[family-name:var(--font-newsreader)] text-[18px] font-semibold tracking-tight text-[#002022]">
-              ZenLife
-            </span>
+            <span className="text-[15px] font-extrabold tracking-tight text-zen-900">ZenLife</span>
           </Link>
-          <div className="hidden md:flex items-center gap-7">
-            {[
-              { label: "Dossier", active: true },
-              { label: "Insights", href: `#findings` },
-              { label: "Zeno", href: `/report/${reportId}/chat` },
-              { label: "Archive", href: "/dashboard" },
-            ].map((nav) => (
-              <Link
-                key={nav.label}
-                href={nav.href || "#"}
-                className={cn(
-                  "py-1 font-[family-name:var(--font-inter)] text-[13px] font-semibold transition-opacity hover:opacity-80",
-                  nav.active ? "text-[#171d1d] border-b-2 border-[#171d1d]" : "text-[#6d797b]"
-                )}
-              >
-                {nav.label}
-              </Link>
-            ))}
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/report/${reportId}/chat`}
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-zen-900/20 px-4 py-2 text-[12px] font-semibold text-zen-900 hover:bg-zen-50 transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Ask Zeno
+            </Link>
+            <Link
+              href="/dashboard"
+              className="text-[12px] font-medium text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              My Reports
+            </Link>
           </div>
-          <Link
-            href={`/report/${reportId}/chat`}
-            className="inline-flex items-center gap-1.5 font-[family-name:var(--font-inter)] text-[13px] font-semibold text-[#171d1d] hover:opacity-80 transition-opacity"
-          >
-            Ask Zeno
-            <MessageCircle className="h-4 w-4" />
-          </Link>
         </div>
       </header>
 
@@ -541,372 +514,242 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         </div>
       </div>
 
-      {/* ── Page header (Stitch dossier style) ─────────────────────────── */}
+      {/* ── Page header ───────────────────────────────────────────────── */}
       <div ref={heroRef} className="pt-[53px]">
-        <div className="mx-auto max-w-5xl px-6 pt-10 pb-6">
+        <div className="mx-auto max-w-5xl px-6 pt-8 pb-4">
           <Link
             href="/dashboard"
-            className="mb-5 inline-flex items-center gap-1.5 text-[12px] font-medium text-gray-400 hover:text-[#006970] transition-colors"
+            className="mb-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-gray-400 hover:text-zen-900 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             My Health Reports
           </Link>
-
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
-            <div>
-              <h1 className="font-[family-name:var(--font-newsreader)] text-[clamp(2.25rem,5vw,3rem)] leading-[1.1] text-[#006970] tracking-tight">
-                {report.patient_name?.split(" ")[0]}&apos;s Health Dossier
-              </h1>
-              <p className="mt-3 flex items-center gap-3 font-[family-name:var(--font-inter)] text-[13px] text-[#3d494a]">
-                <span>{report.patient_age ?? "—"} Years</span>
-                <span className="w-1 h-1 rounded-full bg-[#bcc9ca]" />
-                <span>{report.patient_gender ?? "—"}</span>
-                <span className="w-1 h-1 rounded-full bg-[#bcc9ca]" />
-                <span className="font-medium">Report ID: {report.booking_id}</span>
-                {report.zen_id && (
-                  <>
-                    <span className="w-1 h-1 rounded-full bg-[#bcc9ca]" />
-                    <span>Zen ID {report.zen_id}</span>
-                  </>
-                )}
-              </p>
-            </div>
-
-            {/* Status chip — pulsing dot for critical, calm for the rest */}
-            <div className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 rounded-full border self-start md:self-auto",
-              overallSev === "critical" && "bg-[#ffdad6] border-[#ba1a1a]/20",
-              overallSev === "major"    && "bg-[#ffe088] border-[#735c00]/20",
-              overallSev === "minor"    && "bg-[#7cf4ff]/40 border-[#006970]/20",
-              overallSev === "normal"   && "bg-[#dee3e4] border-[#bcc9ca]",
-            )}>
-              <span className={cn(
-                "w-2.5 h-2.5 rounded-full",
-                overallSev === "critical" && "bg-[#ba1a1a] animate-pulse",
-                overallSev === "major"    && "bg-[#735c00]",
-                overallSev === "minor"    && "bg-[#006970]",
-                overallSev === "normal"   && "bg-[#6d797b]",
-              )} />
-              <span className={cn(
-                "font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase",
-                overallSev === "critical" && "text-[#93000a]",
-                overallSev === "major"    && "text-[#574500]",
-                overallSev === "minor"    && "text-[#004f54]",
-                overallSev === "normal"   && "text-[#3d494a]",
-              )}>
-                {overallSev === "critical" ? "Needs prompt attention"
-                  : overallSev === "major"    ? "High health risk"
-                  : overallSev === "minor"    ? "Mild health concern"
-                  : "Healthy and stable"}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] text-[#3d494a]">
-            <span className="inline-flex items-center gap-1.5">
-              <Calendar className="h-3 w-3 text-[#bcc9ca]" />
-              <span className="text-[#6d797b]">Scan</span>
-              <span className="font-semibold text-[#006970]">{formatDate(report.report_date)}</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Calendar className="h-3 w-3 text-[#bcc9ca]" />
-              <span className="text-[#6d797b]">Next visit</span>
-              <span className="font-semibold text-[#006970]">{formatDate(report.next_visit)}</span>
-            </span>
-          </div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">
+            ZenReport · {report.booking_id}
+          </p>
+          <h1 className="font-display text-[clamp(2rem,5vw,3rem)] leading-none text-zen-900">
+            {report.patient_name}
+          </h1>
+          <p className="mt-2 text-[14px] text-gray-400">
+            {report.patient_age ?? "—"} years · {report.patient_gender ?? "—"} · ZenScan Full Body
+          </p>
         </div>
       </div>
 
       {/* ── Overview card (compact) ────────────────────────────────────── */}
       <div id="overview" className="mx-auto max-w-5xl px-6 pb-6">
-        {/* Bento overview: ZenScore (1 col) + AI Summary (2 cols) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
+          <div className="h-1 w-full bg-gradient-to-r from-zen-400 via-zen-600 to-zen-900" />
+          <div className="p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
 
-          {/* ZenScore card */}
-          <div className="bg-white ring-1 ring-[#bcc9ca]/40 rounded-xl p-6 flex flex-col items-center text-center relative overflow-hidden">
-            <div className={cn(
-              "absolute top-0 left-0 w-full h-1.5",
-              overallSev === "critical" && "bg-[#ba1a1a]",
-              overallSev === "major"    && "bg-[#e4c465]",
-              overallSev === "minor"    && "bg-[#5cd8e2]",
-              overallSev === "normal"   && "bg-[#bcc9ca]",
-            )} />
-            <h3 className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#3d494a] mb-6 w-full text-left">
-              ZenScore
-            </h3>
-            {/* Conic-gradient gauge */}
-            <div
-              className="relative w-32 h-32 flex items-center justify-center rounded-full mb-6"
-              style={{
-                background: `conic-gradient(${
-                  overallSev === "critical" ? "#ba1a1a" :
-                  overallSev === "major"    ? "#e4c465" :
-                  overallSev === "minor"    ? "#5cd8e2" : "#7cf4ff"
-                } 0% ${report.coverage_index ?? 0}%, #e4e2e4 ${report.coverage_index ?? 0}% 100%)`,
-              }}
-            >
-              <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center shadow-[inset_0_0_10px_rgba(0,0,0,0.05)]">
-                <span className={cn(
-                  "font-[family-name:var(--font-newsreader)] text-[48px] font-medium leading-none tabular-nums",
-                  overallSev === "critical" && "text-[#ba1a1a]",
-                  overallSev === "major"    && "text-[#735c00]",
-                  overallSev === "minor"    && "text-[#006970]",
-                  overallSev === "normal"   && "text-[#006970]",
-                )}>
-                  {report.coverage_index ?? 0}
+            {/* Left: status pill + IDs + dates inline */}
+            <div className="flex-1 min-w-0 space-y-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-mono text-gray-400">
+                <SeverityPill sev={overallSev} />
+                <span><span className="text-gray-300">Order</span> {report.booking_id}</span>
+                {report.zen_id && (
+                  <span><span className="text-gray-300">Zen ID</span> {report.zen_id}</span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px]">
+                <span className="inline-flex items-center gap-1.5 text-gray-500">
+                  <Calendar className="h-3 w-3 text-gray-300" />
+                  <span className="text-gray-400">Scan</span>
+                  <span className="font-semibold text-zen-900">{formatDate(report.report_date)}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-gray-500">
+                  <Calendar className="h-3 w-3 text-gray-300" />
+                  <span className="text-gray-400">Next visit</span>
+                  <span className="font-semibold text-zen-900">{formatDate(report.next_visit)}</span>
                 </span>
               </div>
-            </div>
-            {/* 4 mini-stats below ring */}
-            <div className="w-full flex justify-between items-center px-2 mt-2 border-t border-[#dee3e4] pt-4">
-              {[
-                { label: "Crit", v: critical, color: "text-[#ba1a1a]" },
-                { label: "Maj",  v: major,    color: "text-[#735c00]" },
-                { label: "Min",  v: minor,    color: "text-[#006970]" },
-                { label: "Norm", v: normal,   color: "text-[#3d494a]" },
-              ].map((s) => (
-                <div key={s.label} className="flex flex-col items-center">
-                  <span className={cn("font-[family-name:var(--font-inter)] text-[15px] font-semibold tabular-nums", s.color)}>{s.v}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-[#6d797b]">{s.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* AI Summary card (2 cols) */}
-          <div className="bg-white ring-1 ring-[#bcc9ca]/40 rounded-xl p-6 lg:col-span-2 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="h-4 w-4 text-[#006970]" />
-                <h3 className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#3d494a]">
-                  Zeno Intelligence Summary
-                </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => { setPanelOrgan(null); setPanelFindings(findings); setPanelOpen(true); }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-zen-900 px-4 py-2 text-[11px] font-bold text-white hover:bg-zen-800 transition-colors"
+                >
+                  <Activity className="h-3 w-3" /> All {totalFindings} Findings
+                </button>
+                <Link
+                  href={`/report/${reportId}/chat`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3.5 py-2 text-[11px] font-semibold text-zen-900 hover:bg-cream transition-colors"
+                >
+                  <MessageCircle className="h-3 w-3" /> Ask Zeno
+                </Link>
+                <Link
+                  href={`/report/${reportId}/download`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3.5 py-2 text-[11px] font-semibold text-gray-500 hover:bg-cream transition-colors"
+                >
+                  <Download className="h-3 w-3" /> Download
+                </Link>
               </div>
-              <p className="font-[family-name:var(--font-inter)] text-[14px] text-[#171d1d] leading-[1.65] max-w-2xl">
-                {report.summary || "Your ZenReport is ready. Explore your organ analysis and findings below."}
-              </p>
             </div>
-            <div className="flex flex-wrap gap-3 mt-7">
-              <button
-                onClick={() => { setPanelOrgan(null); setPanelFindings(findings); setPanelOpen(true); }}
-                className="bg-[#f5fafb] hover:bg-[#eff5f5] px-3 py-1.5 rounded border border-[#bcc9ca]/40 flex items-center gap-2 transition-colors"
-              >
-                <span className="font-[family-name:var(--font-inter)] text-[13px] text-[#171d1d] font-semibold tabular-nums">{totalFindings}</span>
-                <span className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#3d494a]">Total Findings</span>
-              </button>
-              {critical > 0 && (
-                <div className="bg-[#ffdad6]/50 px-3 py-1.5 rounded border border-[#ba1a1a]/20 flex items-center gap-2">
-                  <span className="font-[family-name:var(--font-inter)] text-[13px] text-[#ba1a1a] font-semibold tabular-nums">{critical}</span>
-                  <span className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#93000a]">Critical</span>
-                </div>
-              )}
-              <div className="bg-[#f5fafb] px-3 py-1.5 rounded border border-[#bcc9ca]/40 flex items-center gap-2">
-                <span className="font-[family-name:var(--font-inter)] text-[13px] text-[#171d1d] font-semibold tabular-nums">{priorities.length}</span>
-                <span className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#3d494a]">Priorities</span>
+
+            {/* Right: ZenScore ring + tight severity legend */}
+            <div className="flex items-center gap-4 flex-shrink-0">
+              <ZenScoreRing score={report.coverage_index ?? 0} severity={report.overall_severity ?? "normal"} />
+              <div className="space-y-1 min-w-[110px]">
+                {(["critical", "major", "minor", "normal"] as const).map((sev) => {
+                  const count = sev === "critical" ? critical : sev === "major" ? major : sev === "minor" ? minor : normal;
+                  const cfg = SEV_CONFIG[sev];
+                  return (
+                    <div key={sev} className="flex items-center gap-2 text-[11px]">
+                      <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", cfg.bar)} />
+                      <span className="flex-1 text-gray-500">{cfg.label}</span>
+                      <span className="font-bold text-zen-900 tabular-nums">{count}</span>
+                    </div>
+                  );
+                })}
               </div>
-              <Link
-                href={`/report/${reportId}/chat`}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#006970] hover:bg-[#004f54] px-4 py-2 text-[12px] font-semibold text-white transition-colors"
-              >
-                <MessageCircle className="h-3.5 w-3.5" /> Ask Zeno a follow-up
-              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Main content (Stitch dossier) ───────────────────────────────── */}
-      <main className={cn("mx-auto max-w-5xl px-6", isAdminPreview ? "pb-32" : "pb-20")}>
+      {/* ── Main content ───────────────────────────────────────────────── */}
+      <main className={cn("mx-auto max-w-5xl px-6 space-y-12", isAdminPreview ? "pb-32" : "pb-20")}>
 
-        {/* ── Organ Analysis ──────────────────────────────────────────── */}
-        <section id="organs">
-          <DossierEyebrow label="Organ Analysis" />
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
-            {organs.map((organ) => {
-              const sev = organ.severity?.toLowerCase() ?? "normal";
-              const sevBar =
-                sev === "critical" ? "bg-[#ba1a1a]" :
-                sev === "major"    ? "bg-[#e4c465]" :
-                sev === "minor"    ? "bg-[#5cd8e2]" : "bg-[#bcc9ca]";
-              const sevPill =
-                sev === "critical" ? "bg-[#ffdad6] text-[#93000a]" :
-                sev === "major"    ? "bg-[#ffe088] text-[#574500]" :
-                sev === "minor"    ? "bg-[#7cf4ff] text-[#004f54]" : "bg-[#dee3e4] text-[#3d494a]";
-              const iconColor =
-                sev === "critical" ? "text-[#ba1a1a]" :
-                sev === "major"    ? "text-[#735c00]" :
-                sev === "minor"    ? "text-[#006970]" : "text-[#6d797b]";
-              return (
-                <button
-                  key={organ.id}
-                  onClick={() => openOrganPanel(organ)}
-                  className="bg-white ring-1 ring-[#bcc9ca]/40 hover:ring-[#006970]/30 hover:-translate-y-0.5 transition-all rounded-xl p-6 relative overflow-hidden text-left group"
+        {/* ── AI Summary ──────────────────────────────────────────────── */}
+        {report.summary && (
+          <section>
+            <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
+              <div className="flex items-center gap-3 px-6 py-4 border-b border-black/5 bg-cream">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zen-900">
+                  <Bot className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[12px] font-bold text-zen-900 leading-tight">Zeno — AI Health Assessment</p>
+                  <p className="text-[10px] text-gray-400">Personalised analysis of your ZenScan results</p>
+                </div>
+                <Sparkles className="h-4 w-4 text-gray-300" />
+              </div>
+              <div className="px-6 py-5">
+                <p className="text-[12px] text-gray-700 leading-[1.65]">{report.summary}</p>
+              </div>
+              <div className="px-6 pb-5">
+                <Link
+                  href={`/report/${reportId}/chat`}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-zen-700 hover:text-zen-900 transition-colors"
                 >
-                  <div className={cn("absolute top-0 left-0 w-full h-1.5", sevBar)} />
-                  <div className="flex justify-between items-start mb-6">
-                    <span className={cn("text-[28px] leading-none", iconColor)}>{organ.icon}</span>
-                    <span className={cn("font-[family-name:var(--font-inter)] text-[9px] px-2 py-0.5 rounded uppercase font-semibold tracking-[0.18em]", sevPill)}>
-                      {sev === "critical" ? "Critical" : sev === "major" ? "Major" : sev === "minor" ? "Minor" : "Normal"}
-                    </span>
-                  </div>
-                  <h3 className="font-[family-name:var(--font-newsreader)] text-[22px] leading-[1.2] text-[#006970] mb-1">
-                    {organ.organ_name}
-                  </h3>
-                  <p className="font-[family-name:var(--font-inter)] text-[12px] text-[#3d494a] leading-snug">
-                    {organ.risk_label || (sev === "normal" ? "All parameters within healthy range." : "Tap to view findings.")}
-                  </p>
-                </button>
-              );
-            })}
+                  Ask Zeno a follow-up <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── Key stats ───────────────────────────────────────────────── */}
+        <section>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <StatChip icon={Activity} label="Total Findings" value={totalFindings} sub={`${organs.length} organ systems`} />
+            <StatChip icon={AlertTriangle} label="Critical" value={critical} sub={critical > 0 ? "needs attention" : "none found"} accent={critical > 0 ? "red" : undefined} />
+            <StatChip icon={Target} label="Priorities" value={priorities.length} sub="personalised actions" />
           </div>
         </section>
 
-        {/* ── Findings By Severity ────────────────────────────────────── */}
-        <section id="findings">
-          <DossierEyebrow label="Findings By Severity" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-            {([
-              { key: "critical", count: critical, color: "border-l-[#ba1a1a]" },
-              { key: "major",    count: major,    color: "border-l-[#e4c465]" },
-              { key: "minor",    count: minor,    color: "border-l-[#5cd8e2]" },
-              { key: "normal",   count: normal,   color: "border-l-[#bcc9ca]" },
-            ] as const).map((s) => (
+        {/* ── Organ Analysis ──────────────────────────────────────────── */}
+        <section id="organs">
+          <SectionHeading
+            label="ZenCore"
+            title="Organ Analysis"
+            subtitle="Click any organ card to explore detailed parameter findings"
+            action={
               <button
-                key={s.key}
-                onClick={() => openSeverityPanel(s.key)}
-                disabled={s.count === 0}
-                className={cn(
-                  "bg-white ring-1 ring-[#bcc9ca]/40 rounded-xl p-6 flex justify-between items-center border-l-4 hover:bg-[#eff5f5] transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed",
-                  s.color
-                )}
+                onClick={() => { setPanelOrgan(null); setPanelFindings(findings); setPanelOpen(true); }}
+                className="flex-shrink-0 flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-4 py-2 text-[12px] font-semibold text-gray-600 hover:bg-cream transition-colors"
               >
-                <div>
-                  <h4 className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#3d494a] mb-1">
-                    {s.key === "critical" ? "Critical" : s.key === "major" ? "Major" : s.key === "minor" ? "Minor" : "Normal"}
-                  </h4>
-                  <span className="font-[family-name:var(--font-newsreader)] text-[32px] text-[#006970] tabular-nums">{s.count}</span>
-                </div>
-                <ChevronRight className="h-5 w-5 text-[#6d797b]" />
+                All {totalFindings} findings <ChevronRight className="h-3.5 w-3.5" />
               </button>
-            ))}
+            }
+          />
+          <OrganGrid organs={organs} findings={findings} ignoredParams={report.ignored_params || []} patientGender={report.patient_gender} onSelect={openOrganPanel} />
+        </section>
+
+        {/* ── Findings by Severity ────────────────────────────────────── */}
+        <section id="findings">
+          <SectionHeading
+            label="Findings"
+            title="By Severity"
+            subtitle="Tap a card to view the complete list of findings in that category"
+          />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {(["critical", "major", "minor", "normal"] as const).map((sev) => {
+              const count = sev === "critical" ? critical : sev === "major" ? major : sev === "minor" ? minor : normal;
+              return (
+                <SeverityCard
+                  key={sev}
+                  sev={sev}
+                  count={count}
+                  totalFindings={totalFindings}
+                  onClick={() => openSeverityPanel(sev)}
+                />
+              );
+            })}
           </div>
         </section>
 
         {/* ── Health Priorities ───────────────────────────────────────── */}
         {priorities.length > 0 && (
           <section id="priorities">
-            <DossierEyebrow label="Health Priorities" />
-            <div className="flex flex-col gap-3 mb-12">
-              {priorities.map((p, idx) => {
-                const isUrgent = idx < 2;
-                return (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      "bg-white rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden",
-                      isUrgent ? "ring-1 ring-[#ba1a1a]/30" : "ring-1 ring-[#bcc9ca]/40"
-                    )}
-                  >
-                    <div className={cn("absolute left-0 top-0 w-1 h-full", isUrgent ? "bg-[#ba1a1a]" : "bg-[#bcc9ca]")} />
-                    <div className="flex items-center gap-4 pl-3">
-                      <div className={cn(
-                        "w-9 h-9 flex-shrink-0 rounded-full flex items-center justify-center font-[family-name:var(--font-inter)] text-[14px] font-bold",
-                        isUrgent ? "bg-[#ffdad6] text-[#ba1a1a]" : "bg-[#dee3e4] text-[#3d494a]"
-                      )}>{p.priority_order}</div>
-                      <div className="min-w-0">
-                        <h4 className="font-[family-name:var(--font-inter)] text-[14px] font-semibold text-[#006970] leading-snug">
-                          {p.title}
-                        </h4>
-                        <p className="font-[family-name:var(--font-inter)] text-[12px] text-[#3d494a] mt-1 leading-snug">
-                          {p.why_important}
-                        </p>
-                      </div>
-                    </div>
-                    {isUrgent && (
-                      <button className="shrink-0 bg-[#006970] hover:bg-[#004f54] text-white font-[family-name:var(--font-inter)] text-[13px] font-semibold px-4 py-2 rounded-lg transition-colors self-start sm:self-auto">
-                        Action Required
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+            <SectionHeading
+              label="Action Plan"
+              title="Your Health Priorities"
+              subtitle="A personalised plan generated by Zeno AI based on your scan results"
+            />
+            <div className="grid gap-4 lg:grid-cols-2">
+              {priorities.map((p) => (
+                <PriorityCard key={p.id} priority={p} />
+              ))}
             </div>
           </section>
         )}
 
-        {/* ── ZenAge — Longevity Metric ───────────────────────────────── */}
+        {/* ── ZenAge ──────────────────────────────────────────────────── */}
         {bodyAge && bodyAge.zen_age != null && (
           <section id="body-age">
-            <DossierEyebrow label="Longevity Metrics" />
-            {(() => {
-              const diff = bodyAge.age_difference ?? 0;
-              const younger = diff < 0;
-              return (
-                <div className="bg-[#7cf4ff]/40 ring-1 ring-[#bcc9ca]/30 rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
-                  <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
-                      <span className="text-[32px]">⏳</span>
-                    </div>
-                    <div>
-                      <h3 className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#004f54] mb-1">
-                        Biological ZenAge
-                      </h3>
-                      <div className="flex items-baseline gap-3">
-                        <span className="font-[family-name:var(--font-newsreader)] text-[40px] text-[#002022] leading-none tabular-nums">
-                          {Math.round(bodyAge.zen_age * 10) / 10}
-                        </span>
-                        <span className="font-[family-name:var(--font-inter)] text-[14px] text-[#004f54]">
-                          Years
-                          {bodyAge.chronological_age && (
-                            <span className="ml-2 text-[#6d797b]">vs {bodyAge.chronological_age} chronological</span>
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className={cn(
-                    "px-4 py-2 rounded-full font-[family-name:var(--font-inter)] text-[13px] font-semibold flex items-center gap-2",
-                    younger ? "bg-[#dee3e4] text-[#006970]" : "bg-[#ffe088] text-[#574500]"
-                  )}>
-                    <TrendingUp className={cn("h-4 w-4", younger && "rotate-180")} />
-                    {Math.abs(diff)} years {younger ? "younger" : "older"} than chronological
-                  </div>
-                </div>
-              );
-            })()}
+            <SectionHeading
+              label="Biological Age"
+              title="ZenAge"
+              subtitle="Calculated from blood biomarkers, scan data & AI analysis"
+            />
+            <ZenAgeCard bodyAge={bodyAge} />
           </section>
         )}
 
-        {/* ── Zeno CTA (Stitch dossier teal) ──────────────────────────── */}
+        {/* ── Zeno CTA ────────────────────────────────────────────────── */}
         <section>
-          <div className="rounded-2xl bg-[#002022] text-white overflow-hidden ring-1 ring-[#004f54]">
+          <div className="rounded-3xl bg-zen-900 text-white overflow-hidden">
             <div className="px-8 py-8 md:flex md:items-center md:justify-between md:gap-8">
               <div className="mb-6 md:mb-0">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-4 w-4 text-[#7cf4ff]" />
-                  <span className="font-[family-name:var(--font-inter)] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#7cf4ff]">Zeno · Your AI Health Assistant</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                    <Bot className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Zeno AI</span>
                 </div>
-                <h3 className="font-[family-name:var(--font-newsreader)] text-[1.75rem] leading-tight text-white">
-                  Questions about your results?
+                <h3 className="font-display text-[1.8rem] leading-tight text-white">
+                  Questions about<br />your results?
                 </h3>
-                <p className="mt-2 font-[family-name:var(--font-inter)] text-[13px] text-white/70 leading-relaxed max-w-md">
-                  Zeno has read every line of your report. Ask anything in plain English — 24/7 for the next 12 months.
+                <p className="mt-2 text-[13px] text-white/60 leading-relaxed max-w-md">
+                  Zeno explains every finding in plain language and helps you understand what to do next — 24/7.
                 </p>
               </div>
               <div className="flex flex-col gap-3 flex-shrink-0">
                 <Link
                   href={`/report/${reportId}/chat`}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-7 py-3 font-[family-name:var(--font-inter)] text-[13px] font-semibold text-[#002022] hover:bg-[#7cf4ff] transition-colors"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-8 py-3.5 text-[13px] font-bold text-zen-900 hover:bg-zen-50 transition-colors"
                 >
                   <MessageCircle className="h-4 w-4" />
                   Chat with Zeno
                 </Link>
                 <Link
-                  href={`/report/${reportId}/download`}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 px-7 py-3 font-[family-name:var(--font-inter)] text-[12px] font-semibold text-white hover:bg-white/10 transition-colors"
+                  href={`/report/${reportId}/notes`}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-8 py-3 text-[12px] font-semibold text-white hover:bg-white/10 transition-colors"
                 >
-                  <Download className="h-4 w-4" />
-                  Download Report
+                  <FileText className="h-4 w-4" />
+                  Doctor&apos;s Notes
                 </Link>
               </div>
             </div>
