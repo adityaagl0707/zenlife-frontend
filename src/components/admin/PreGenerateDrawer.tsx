@@ -2,8 +2,30 @@
 import { useEffect, useState, useCallback } from "react";
 import { X, Loader2, Sparkles, EyeOff, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SECTION_META } from "./ReportSectionsPanel";
+import { genderExcludedNames } from "@/lib/organParamMap";
 
 const BASE = (process.env.NEXT_PUBLIC_API_URL || "https://zenlife.health/api/v1");
+
+function applyGenderFilter(
+  unfilledBySection: Record<string, ParamMeta[]>,
+  patientGender?: string,
+): Record<string, ParamMeta[]> {
+  const isFemale = (patientGender || "").toUpperCase().startsWith("F");
+  const isMale = (patientGender || "").toUpperCase().startsWith("M");
+  const excludedNames = genderExcludedNames(patientGender);
+  const out: Record<string, ParamMeta[]> = {};
+  for (const [sec, params] of Object.entries(unfilledBySection)) {
+    const meta = SECTION_META[sec];
+    // Drop whole sections that don't apply (e.g. mammography for males)
+    if (meta?.female_only && !isFemale) continue;
+    if (meta && (meta as { male_only?: boolean }).male_only && !isMale) continue;
+    // Drop individual params that don't apply
+    const kept = params.filter((p) => !excludedNames.has(p.name.toLowerCase().trim()));
+    if (kept.length) out[sec] = kept;
+  }
+  return out;
+}
 
 type ParamMeta = { name: string; unit: string; normal: string; paired_secondary: string | null };
 type UnfilledResp = {
@@ -14,6 +36,7 @@ type UnfilledResp = {
 
 interface Props {
   reportId: number;
+  patientGender?: string;
   open: boolean;
   onClose: () => void;
   onProceed: () => void;     // called when admin hits "Generate Report"
@@ -32,7 +55,7 @@ interface Props {
  * After the admin is done, "Generate Report" runs the original generation
  * pipeline (ZenScore + Body Age + Priorities).
  */
-export default function PreGenerateDrawer({ reportId, open, onClose, onProceed }: Props) {
+export default function PreGenerateDrawer({ reportId, patientGender, open, onClose, onProceed }: Props) {
   const [data, setData] = useState<UnfilledResp | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingParam, setSavingParam] = useState<string | null>(null);
@@ -103,7 +126,10 @@ export default function PreGenerateDrawer({ reportId, open, onClose, onProceed }
     } finally { setSavingParam(null); }
   }
 
-  const totalUnfilled = data ? Object.values(data.unfilled_by_section).reduce((s, l) => s + l.length, 0) : 0;
+  // Defensive client-side gender filter — keeps the drawer clean even if a
+  // stale backend still returns gender-inapplicable sections/params.
+  const filteredBySection = data ? applyGenderFilter(data.unfilled_by_section, patientGender) : {};
+  const totalUnfilled = Object.values(filteredBySection).reduce((s, l) => s + l.length, 0);
   const ignoredCount = data?.ignored_params.length || 0;
 
   return (
@@ -134,7 +160,7 @@ export default function PreGenerateDrawer({ reportId, open, onClose, onProceed }
               ✓ All parameters have values or are explicitly ignored. Ready to generate.
             </div>
           ) : (
-            Object.entries(data.unfilled_by_section).map(([sec, params]) => {
+            Object.entries(filteredBySection).map(([sec, params]) => {
               const meta = data.section_meta[sec] || { label: sec, icon: "•" };
               return (
                 <section key={sec}>

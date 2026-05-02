@@ -1,7 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import { OrganScore, Finding } from "@/lib/api";
-import { computeOrganCounts, organTotalParams, organIgnoredCount } from "@/lib/organParamMap";
+import { computeOrganCounts, organApplicableTotal, organIgnoredCount } from "@/lib/organParamMap";
 
 const SEV_TOP: Record<string, string> = {
   critical: "bg-red-500",
@@ -42,11 +42,13 @@ export default function OrganGrid({
   organs,
   findings = [],
   ignoredParams = [],
+  patientGender,
   onSelect,
 }: {
   organs: OrganScore[];
   findings?: Finding[];
   ignoredParams?: string[];
+  patientGender?: string;
   onSelect: (organ: OrganScore) => void;
 }) {
   return (
@@ -54,11 +56,12 @@ export default function OrganGrid({
       {organs.map((organ) => {
         const s = organ.severity?.toLowerCase() ?? "normal";
         const counts = computeOrganCounts(organ.organ_name, findings);
-        // Subtract ignored params from the denominator so the patient view
-        // doesn't count parameters the admin explicitly excluded.
+        // Denominator = canonical params for this organ that apply to the
+        // patient's gender, minus anything the admin explicitly ignored.
         const totalParams = Math.max(
           0,
-          organTotalParams(organ.organ_name) - organIgnoredCount(organ.organ_name, ignoredParams)
+          organApplicableTotal(organ.organ_name, patientGender)
+            - organIgnoredCount(organ.organ_name, ignoredParams)
         );
         const imported = counts.critical + counts.major + counts.minor + counts.normal;
 

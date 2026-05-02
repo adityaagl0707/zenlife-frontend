@@ -1471,6 +1471,7 @@ export default function AdminPage() {
                       {/* Pre-generate drawer — review unfilled / ignored params */}
                       <PreGenerateDrawer
                         reportId={selectedReportId!}
+                        patientGender={selectedPatient?.gender}
                         open={preGenOpen}
                         onClose={() => setPreGenOpen(false)}
                         onProceed={handleGenerate}

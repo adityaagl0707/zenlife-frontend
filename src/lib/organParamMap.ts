@@ -266,6 +266,38 @@ export function organTotalParams(organName: string): number {
 }
 
 /**
+ * Params that don't apply to this patient's gender. Mirrors backend
+ * SECTION_PARAMETERS gender flags — used to shrink frontend organ totals
+ * and pre-filter UI lists. Lowercase canonical names.
+ */
+const FEMALE_ONLY = new Set([
+  "amh","breast","breast ultrasound","ca 15-3","cervix","dhea-s",
+  "endometrial thickness","endometrium","fsh","he4","hpv dna test","lh",
+  "mammography","ovaries","pap smear","pelvic ultrasound","progesterone",
+  "prolactin","transvaginal ultrasound","uterus",
+].map(canon));
+const MALE_ONLY = new Set([
+  "psa","prostate volume","prostate size (if male)","seminal vesicles",
+].map(canon));
+
+export function genderExcludedNames(gender?: string): Set<string> {
+  const g = (gender || "").toUpperCase();
+  if (g === "M" || g === "MALE") return FEMALE_ONLY;
+  if (g === "F" || g === "FEMALE") return MALE_ONLY;
+  return new Set();
+}
+
+/** Canonical param count for an organ, with gender-inapplicable params removed. */
+export function organApplicableTotal(organName: string, gender?: string): number {
+  const excluded = genderExcludedNames(gender);
+  if (!excluded.size) return organTotalParams(organName);
+  const wanted = canonicalParamSet(organName);
+  let n = 0;
+  for (const p of wanted) if (!excluded.has(p)) n++;
+  return n;
+}
+
+/**
  * How many of this organ's canonical params appear in the report's
  * `ignored_params` list. Used to shrink the displayed denominator so the
  * patient sees an honest "X imported / Y applicable" ratio.

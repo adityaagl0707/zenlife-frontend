@@ -664,7 +664,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               </button>
             }
           />
-          <OrganGrid organs={organs} findings={findings} ignoredParams={report.ignored_params || []} onSelect={openOrganPanel} />
+          <OrganGrid organs={organs} findings={findings} ignoredParams={report.ignored_params || []} patientGender={report.patient_gender} onSelect={openOrganPanel} />
         </section>
 
         {/* ── Findings by Severity ────────────────────────────────────── */}
