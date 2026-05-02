@@ -223,40 +223,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── TAILORED FOR SEX ──────────────────────────────────────────────── */}
-      <section className="bg-cream py-12 border-b border-black/5">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid items-center gap-6 lg:grid-cols-[1fr_2fr]">
-            <div>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-zen-600">
-                <span className="h-px w-8 bg-zen-500 inline-block align-middle mr-3" />
-                Tailored to your sex
-              </p>
-              <h3 className="font-display text-[clamp(1.4rem,2.5vw,1.9rem)] leading-tight text-zen-900">
-                Different bodies. Different tests.
-              </h3>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-black/5">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600 mb-1">For men</p>
-                <p className="text-[13px] text-gray-600 leading-snug">
-                  Adds prostate ultrasound, PSA blood test, total + free testosterone, SHBG and IGF-1.
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-black/5">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-pink-600 mb-1">For women</p>
-                <p className="text-[13px] text-gray-600 leading-snug">
-                  Adds Mammography (40+), Pelvic + Transvaginal USG, Pap Smear, HPV DNA, AMH, FSH, LH, Estradiol.
-                </p>
-              </div>
-            </div>
-          </div>
-          <p className="mt-4 text-[11px] text-gray-400">
-            Sex-irrelevant tests are filtered out so your report only shows what actually applies to you. <Link href="/science" className="font-semibold text-zen-700 hover:text-zen-900">See the full list →</Link>
-          </p>
-        </div>
-      </section>
-
       {/* ── WHAT WE FIND ──────────────────────────────────────────────────── */}
       <section className="py-28 bg-cream">
         <div className="mx-auto max-w-7xl px-6">
@@ -355,6 +321,40 @@ export default function HomePage() {
               Mammography included for women 40+, optional below.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* ── TAILORED FOR SEX ──────────────────────────────────────────────── */}
+      <section className="bg-cream py-12 border-b border-black/5">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid items-center gap-6 lg:grid-cols-[1fr_2fr]">
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-zen-600">
+                <span className="h-px w-8 bg-zen-500 inline-block align-middle mr-3" />
+                Tailored to your sex
+              </p>
+              <h3 className="font-display text-[clamp(1.4rem,2.5vw,1.9rem)] leading-tight text-zen-900">
+                Different bodies. Different tests.
+              </h3>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-black/5">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600 mb-1">For men</p>
+                <p className="text-[13px] text-gray-600 leading-snug">
+                  Adds prostate ultrasound, PSA blood test, total + free testosterone, SHBG and IGF-1.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-black/5">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-pink-600 mb-1">For women</p>
+                <p className="text-[13px] text-gray-600 leading-snug">
+                  Adds Mammography (40+), Pelvic + Transvaginal USG, Pap Smear, HPV DNA, AMH, FSH, LH, Estradiol.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-[11px] text-gray-400">
+            Sex-irrelevant tests are filtered out so your report only shows what actually applies to you. <Link href="/science" className="font-semibold text-zen-700 hover:text-zen-900">See the full list →</Link>
+          </p>
         </div>
       </section>
 
