@@ -265,6 +265,27 @@ export function organTotalParams(organName: string): number {
   return canonicalParamSet(organName).size;
 }
 
+/**
+ * How many of this organ's canonical params appear in the report's
+ * `ignored_params` list. Used to shrink the displayed denominator so the
+ * patient sees an honest "X imported / Y applicable" ratio.
+ */
+export function organIgnoredCount(organName: string, ignoredParams: string[]): number {
+  if (!ignoredParams?.length) return 0;
+  const wanted = canonicalParamSet(organName);
+  if (!wanted.size) return 0;
+  const seen = new Set<string>();
+  let n = 0;
+  for (const name of ignoredParams) {
+    const key = canon(name);
+    if (wanted.has(key) && !seen.has(key)) {
+      seen.add(key);
+      n++;
+    }
+  }
+  return n;
+}
+
 export function computeOrganCounts(organName: string, findings: Finding[]): SeverityCounts {
   const counts: SeverityCounts = { critical: 0, major: 0, minor: 0, normal: 0 };
   if (!findings.length) return counts;

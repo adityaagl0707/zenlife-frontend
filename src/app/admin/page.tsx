@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical, RefreshCw, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReportSectionsPanel, { TestStatusPanel, visibleSectionsForGender } from "@/components/admin/ReportSectionsPanel";
+import PreGenerateDrawer from "@/components/admin/PreGenerateDrawer";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "https://zenlife-backend-j5q9.onrender.com").replace(/\/api\/v1\/?$/, "");
 const BASE = `${API_URL}/api/v1`;
@@ -1065,6 +1066,7 @@ export default function AdminPage() {
   const [publishing, setPublishing] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [resetCounter, setResetCounter] = useState(0); // bumps on clear-data → remounts BodyAgeSection
+  const [preGenOpen, setPreGenOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
@@ -1466,9 +1468,17 @@ export default function AdminPage() {
                   return (
                     <div className="space-y-5">
 
-                      {/* ── 1. Generate Report button — always at top ── */}
+                      {/* Pre-generate drawer — review unfilled / ignored params */}
+                      <PreGenerateDrawer
+                        reportId={selectedReportId!}
+                        open={preGenOpen}
+                        onClose={() => setPreGenOpen(false)}
+                        onProceed={handleGenerate}
+                      />
+
+                      {/* ── 1. Generate Report button — opens review drawer ── */}
                       <button
-                        onClick={handleGenerate}
+                        onClick={() => setPreGenOpen(true)}
                         disabled={generating}
                         className="w-full rounded-2xl bg-zen-800 py-4 text-base font-bold text-white hover:bg-zen-700 disabled:opacity-50 flex items-center justify-center gap-3 transition-all shadow-md"
                       >

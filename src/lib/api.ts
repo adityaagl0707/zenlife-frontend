@@ -123,6 +123,7 @@ export interface Report {
   next_visit?: string;
   summary?: string;
   finding_counts?: { critical: number; major: number; minor: number; normal: number };
+  ignored_params?: string[];
 }
 
 export interface OrganScore {

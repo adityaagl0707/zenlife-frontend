@@ -1,7 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import { OrganScore, Finding } from "@/lib/api";
-import { computeOrganCounts, organTotalParams } from "@/lib/organParamMap";
+import { computeOrganCounts, organTotalParams, organIgnoredCount } from "@/lib/organParamMap";
 
 const SEV_TOP: Record<string, string> = {
   critical: "bg-red-500",
@@ -41,10 +41,12 @@ const PILL_STYLE: Record<string, string> = {
 export default function OrganGrid({
   organs,
   findings = [],
+  ignoredParams = [],
   onSelect,
 }: {
   organs: OrganScore[];
   findings?: Finding[];
+  ignoredParams?: string[];
   onSelect: (organ: OrganScore) => void;
 }) {
   return (
@@ -52,9 +54,13 @@ export default function OrganGrid({
       {organs.map((organ) => {
         const s = organ.severity?.toLowerCase() ?? "normal";
         const counts = computeOrganCounts(organ.organ_name, findings);
-        const totalParams = organTotalParams(organ.organ_name);
+        // Subtract ignored params from the denominator so the patient view
+        // doesn't count parameters the admin explicitly excluded.
+        const totalParams = Math.max(
+          0,
+          organTotalParams(organ.organ_name) - organIgnoredCount(organ.organ_name, ignoredParams)
+        );
         const imported = counts.critical + counts.major + counts.minor + counts.normal;
-        const notImported = Math.max(0, totalParams - imported);
 
         // Mini severity distribution bar segments
         const segments = [
@@ -113,11 +119,6 @@ export default function OrganGrid({
                           {counts[sev]}
                         </span>
                       ))}
-                      {notImported > 0 && (
-                        <span className="ml-auto text-[9px] text-gray-300 font-medium whitespace-nowrap">
-                          {notImported} not imported
-                        </span>
-                      )}
                     </div>
                   </>
                 ) : (
