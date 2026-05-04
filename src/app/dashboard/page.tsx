@@ -442,7 +442,7 @@ export default function DashboardPage() {
             </button>
           </div>
 
-        ) : orders.length === 0 ? (
+        ) : orders.length === 0 && !selfReport ? (
 
           /* ── Empty state ────────────────────────────────────────────── */
           <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_220px]">
@@ -460,13 +460,25 @@ export default function DashboardPage() {
                   ZenScan screens 300+ conditions across 10 organ systems —
                   before symptoms appear. Your first scan takes 3–4 hours.
                 </p>
-                <Link
-                  href="/book"
-                  className="mt-7 inline-flex items-center gap-2 rounded-full bg-zen-900 px-7 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-lg"
-                >
-                  Book ZenScan
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                <div className="mt-7 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/book"
+                    className="inline-flex items-center gap-2 rounded-full bg-zen-900 px-7 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-lg"
+                  >
+                    Book ZenScan
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/upload"
+                    className="inline-flex items-center gap-2 rounded-full border border-indigo-300 bg-indigo-50/40 px-5 py-3 text-[13px] font-bold text-indigo-700 hover:bg-indigo-50 transition-colors"
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    Or upload existing reports
+                  </Link>
+                </div>
+                <p className="mt-3 text-[11px] text-gray-400">
+                  Already have lab tests? Drop them in to see a partial report instantly.
+                </p>
               </div>
               <div className="grid grid-cols-3 border-t border-gray-50 divide-x divide-gray-50">
                 {[
