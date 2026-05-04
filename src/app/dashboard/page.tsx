@@ -449,51 +449,61 @@ export default function DashboardPage() {
 
           /* ── Empty state ────────────────────────────────────────────── */
           <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_220px]">
-            <div className="rounded-3xl bg-white ring-1 ring-black/5 overflow-hidden">
-              {/* Decorative top bar */}
-              <div className="h-1 w-full bg-gradient-to-r from-zen-400 via-zen-600 to-zen-900" />
-              <div className="px-8 py-10">
-                <span className="inline-block text-[11px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-4">
-                  No records yet
-                </span>
-                <blockquote className="font-display text-[2rem] leading-tight text-zen-900">
-                  &ldquo;Most diseases are silent.<br />Until they aren&apos;t.&rdquo;
-                </blockquote>
-                <p className="mt-4 text-[14px] text-gray-500 leading-relaxed max-w-md">
-                  ZenScan screens 300+ conditions across 10 organ systems —
-                  before symptoms appear. Your first scan takes 3–4 hours.
-                </p>
-                <div className="mt-7 flex flex-wrap items-center gap-3">
+            <div className="space-y-4">
+              {/* Always-visible upload banner — same indigo card the
+                  logbook view shows. Empty-state patients are arguably
+                  the highest-leverage audience for self-upload. */}
+              <Link
+                href="/upload"
+                className="flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/40 px-5 py-4 hover:bg-indigo-50 transition-colors group"
+              >
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
+                  <Upload className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[13px] font-bold text-indigo-900">Have older reports? Upload them</p>
+                  <p className="mt-0.5 text-[12px] text-indigo-700/80 leading-relaxed">
+                    AI reads PDFs / images of any blood test, MRI, DEXA, ECG and more — builds a partial
+                    Zen Report so you can see what your existing data already says.
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+
+              <div className="rounded-3xl bg-white ring-1 ring-black/5 overflow-hidden">
+                {/* Decorative top bar */}
+                <div className="h-1 w-full bg-gradient-to-r from-zen-400 via-zen-600 to-zen-900" />
+                <div className="px-8 py-10">
+                  <span className="inline-block text-[11px] font-bold uppercase tracking-[0.2em] text-gray-300 mb-4">
+                    No records yet
+                  </span>
+                  <blockquote className="font-display text-[2rem] leading-tight text-zen-900">
+                    &ldquo;Most diseases are silent.<br />Until they aren&apos;t.&rdquo;
+                  </blockquote>
+                  <p className="mt-4 text-[14px] text-gray-500 leading-relaxed max-w-md">
+                    ZenScan screens 300+ conditions across 10 organ systems —
+                    before symptoms appear. Your first scan takes 3–4 hours.
+                  </p>
                   <Link
                     href="/book"
-                    className="inline-flex items-center gap-2 rounded-full bg-zen-900 px-7 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-lg"
+                    className="mt-7 inline-flex items-center gap-2 rounded-full bg-zen-900 px-7 py-3.5 text-[14px] font-bold text-white hover:bg-zen-800 transition-all hover:shadow-lg"
                   >
                     Book ZenScan
                     <ArrowRight className="h-4 w-4" />
                   </Link>
-                  <Link
-                    href="/upload"
-                    className="inline-flex items-center gap-2 rounded-full border border-indigo-300 bg-indigo-50/40 px-5 py-3 text-[13px] font-bold text-indigo-700 hover:bg-indigo-50 transition-colors"
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                    Or upload existing reports
-                  </Link>
                 </div>
-                <p className="mt-3 text-[11px] text-gray-400">
-                  Already have lab tests? Drop them in to see a partial report instantly.
-                </p>
-              </div>
-              <div className="grid grid-cols-3 border-t border-gray-50 divide-x divide-gray-50">
-                {[
-                  { v: "3–4h", l: "Scan duration" },
-                  { v: "300+", l: "Conditions screened" },
-                  { v: "5–7d", l: "Report turnaround" },
-                ].map((s) => (
-                  <div key={s.l} className="px-6 py-5 text-center">
-                    <p className="font-display text-[1.4rem] text-zen-900">{s.v}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{s.l}</p>
-                  </div>
-                ))}
+                <div className="grid grid-cols-3 border-t border-gray-50 divide-x divide-gray-50">
+                  {[
+                    { v: "3–4h", l: "Scan duration" },
+                    { v: "300+", l: "Conditions screened" },
+                    { v: "5–7d", l: "Report turnaround" },
+                  ].map((s) => (
+                    <div key={s.l} className="px-6 py-5 text-center">
+                      <p className="font-display text-[1.4rem] text-zen-900">{s.v}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">{s.l}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
