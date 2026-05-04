@@ -648,7 +648,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             { label: "Organs", href: "#organs" },
             { label: "Findings", href: "#findings" },
             { label: "Priorities", href: "#priorities" },
-            ...(bodyAge?.zen_age != null ? [{ label: "Body Age", href: "#body-age" }] : []),
+            ...(report.source !== "self_uploaded" && bodyAge?.zen_age != null ? [{ label: "Body Age", href: "#body-age" }] : []),
           ].map((nav) => (
             <a
               key={nav.label}
@@ -672,13 +672,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             My Health Reports
           </Link>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">
-            ZenReport · {report.booking_id}
+            {report.source === "self_uploaded"
+              ? "Partial report · Self-uploaded"
+              : `ZenReport · ${report.booking_id}`}
           </p>
           <h1 className="font-display text-[clamp(2rem,5vw,3rem)] leading-none text-zen-900">
             {report.patient_name}
           </h1>
           <p className="mt-2 text-[14px] text-gray-400">
-            {report.patient_age ?? "—"} years · {report.patient_gender ?? "—"} · ZenScan Full Body
+            {report.patient_age ?? "—"} years · {report.patient_gender ?? "—"}
+            {report.source === "self_uploaded" ? null : " · ZenScan Full Body"}
           </p>
         </div>
       </div>
@@ -732,12 +735,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 >
                   <MessageCircle className="h-3 w-3" /> Ask Zeno
                 </Link>
-                <Link
-                  href={`/report/${reportId}/download`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3.5 py-2 text-[11px] font-semibold text-gray-500 hover:bg-cream transition-colors"
-                >
-                  <Download className="h-3 w-3" /> Download
-                </Link>
+                {/* Download (PDF) only for ZenScan reports — self-uploaded
+                    reports are partial assessments, not formal reports. */}
+                {report.source !== "self_uploaded" && (
+                  <Link
+                    href={`/report/${reportId}/download`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3.5 py-2 text-[11px] font-semibold text-gray-500 hover:bg-cream transition-colors"
+                  >
+                    <Download className="h-3 w-3" /> Download
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -981,8 +988,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           </section>
         )}
 
-        {/* ── ZenAge ──────────────────────────────────────────────────── */}
-        {bodyAge && bodyAge.zen_age != null && (
+        {/* ── ZenAge ─ hidden for self-uploaded reports (insufficient data) */}
+        {report.source !== "self_uploaded" && bodyAge && bodyAge.zen_age != null && (
           <section id="body-age">
             <SectionHeading
               label="Biological Age"
