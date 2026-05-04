@@ -31,6 +31,7 @@ import OrganGrid from "@/components/report/OrganGrid";
 import FindingsPanel, { mergePairs } from "@/components/report/FindingsPanel";
 import { findingsForOrgan } from "@/lib/organParamMap";
 import ZenAgeCard from "@/components/report/ZenAgeCard";
+import CoverageMap from "@/components/report/CoverageMap";
 
 // ── Severity config ────────────────────────────────────────────────────────
 
@@ -692,7 +693,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             <div className="flex-1 min-w-0 space-y-3">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-mono text-gray-400">
                 <SeverityPill sev={overallSev} />
-                <span><span className="text-gray-300">Order</span> {report.booking_id}</span>
+                {report.source === "self_uploaded" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-indigo-700 ring-1 ring-indigo-200">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                    Self-uploaded · Partial
+                  </span>
+                ) : (
+                  <span><span className="text-gray-300">Order</span> {report.booking_id}</span>
+                )}
                 {report.zen_id && (
                   <span><span className="text-gray-300">Zen ID</span> {report.zen_id}</span>
                 )}
@@ -784,6 +792,18 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             <StatChip icon={Target} label="Priorities" value={priorities.length} sub="personalised actions" />
           </div>
         </section>
+
+        {/* ── Coverage Map (self-uploaded reports only) ─────────────── */}
+        {report.source === "self_uploaded" && (
+          <section id="coverage">
+            <SectionHeading
+              label="What you've uploaded"
+              title="Coverage Map"
+              subtitle="The picture sharpens with every report. Empty tiles are upsell hooks for ZenScan."
+            />
+            <CoverageMap uploadedSections={report.uploaded_sections || []} />
+          </section>
+        )}
 
         {/* ── Organ Analysis ──────────────────────────────────────────── */}
         <section id="organs">
@@ -909,7 +929,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         })()}
 
         {/* ── Health Priorities ───────────────────────────────────────── */}
-        {priorities.length > 0 && (
+        {/* Self-uploaded reports below 25% coverage skip priorities to
+            avoid generating advice from a single CBC. The Coverage Map
+            above already nudges them to upload more or book a ZenScan. */}
+        {priorities.length > 0 && !(report.source === "self_uploaded" && (report.uploaded_sections?.length ?? 0) < 2) && (
           <section id="priorities">
             <SectionHeading
               label="Action Plan"
@@ -920,6 +943,28 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               {priorities.map((p) => (
                 <PriorityCard key={p.id} priority={p} />
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Low-coverage upsell (self-uploaded only, blocks priorities) ── */}
+        {report.source === "self_uploaded" && (report.uploaded_sections?.length ?? 0) < 2 && (
+          <section id="coverage-upsell">
+            <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-cream ring-1 ring-indigo-200 p-6 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-700 mb-2">More data needed</p>
+              <h3 className="text-[20px] font-extrabold text-zen-900">Health priorities unlock at 2+ test types</h3>
+              <p className="mt-2 text-[13px] text-gray-600 leading-relaxed max-w-md mx-auto">
+                A single test isn&apos;t enough to safely generate a personal action plan. Upload one or two more reports
+                — or book a ZenScan to fill all 8 in one visit.
+              </p>
+              <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
+                <Link href="/upload" className="inline-flex items-center gap-1.5 rounded-full border border-indigo-300 bg-white px-4 py-2 text-[12px] font-bold text-indigo-700 hover:bg-indigo-50 transition-colors">
+                  Upload more reports
+                </Link>
+                <Link href="/book" className="inline-flex items-center gap-1.5 rounded-full bg-zen-900 px-4 py-2 text-[12px] font-bold text-white hover:bg-zen-800 transition-colors">
+                  Book a ZenScan
+                </Link>
+              </div>
             </div>
           </section>
         )}

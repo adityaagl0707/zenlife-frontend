@@ -19,6 +19,7 @@ import {
   FileText,
   Plus,
   Stethoscope,
+  Upload,
 } from "lucide-react";
 import { api, Order } from "@/lib/api";
 import { isLoggedIn, clearToken } from "@/lib/auth";
@@ -66,6 +67,86 @@ function StatusPill({ order }: { order: Order }) {
       <span className={cn("h-1.5 w-1.5 rounded-full animate-pulse", cfg.dot)} />
       {cfg.label}
     </span>
+  );
+}
+
+// ── Self-uploaded reports logbook entry ─────────────────────────────────────
+//
+// Visually distinct from a clinic-generated ZenScan entry: indigo accent
+// instead of green, "Uploaded" label instead of "Latest", calls out
+// coverage % so the patient knows it's a partial picture.
+function SelfReportEntry({
+  reportId,
+  uploadedSections,
+  reportDate,
+  overallSeverity,
+}: {
+  reportId: number;
+  uploadedSections: string[];
+  reportDate: string | null;
+  overallSeverity: string;
+}) {
+  const have = uploadedSections.length;
+  const total = 8;
+  const pct = Math.round((have / total) * 100);
+  const dateParts = formatDateShort(reportDate);
+
+  return (
+    <article className="group grid grid-cols-[72px_1fr] gap-0 rounded-2xl overflow-hidden ring-2 ring-indigo-200 transition-shadow hover:shadow-md">
+      <div className="flex flex-col items-center justify-center gap-0.5 py-5 bg-indigo-600 text-white">
+        {dateParts ? (
+          <>
+            <span className="text-[22px] font-extrabold leading-none">{dateParts.day}</span>
+            <span className="text-[9px] font-bold tracking-[0.18em] text-white/50">{dateParts.month}</span>
+            <span className="text-[11px] font-semibold text-white/40">&apos;{dateParts.year}</span>
+          </>
+        ) : (
+          <span className="text-[11px] text-white/40">Now</span>
+        )}
+      </div>
+
+      <div className="bg-indigo-50/40 px-5 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-700 bg-indigo-100 rounded-full px-2 py-0.5">
+                Self-uploaded
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold bg-white text-indigo-700 ring-1 ring-indigo-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                Severity: {overallSeverity || "normal"}
+              </span>
+            </div>
+            <h3 className="mt-2 font-display text-[1.2rem] leading-tight text-zen-900">
+              Existing reports
+            </h3>
+            <p className="mt-0.5 text-[12px] text-gray-500">
+              {have} of {total} test types · {pct}% coverage
+            </p>
+            <div className="mt-2 h-1 w-full max-w-[180px] rounded-full bg-indigo-100 overflow-hidden">
+              <div className="h-full bg-indigo-500 transition-all" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 border-t border-indigo-100 pt-3 flex-wrap">
+          <Link
+            href={`/report/${reportId}`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-[12px] font-bold text-white hover:bg-indigo-700 transition-colors"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Open existing report
+          </Link>
+          <Link
+            href="/upload"
+            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-indigo-700 hover:bg-indigo-50 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add more reports
+          </Link>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -226,9 +307,17 @@ function ActionLink({
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
+interface SelfReportSummary {
+  report_id: number;
+  uploaded_sections: string[];
+  report_date: string | null;
+  overall_severity: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selfReport, setSelfReport] = useState<SelfReportSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -237,9 +326,21 @@ export default function DashboardPage() {
       router.push("/login");
       return;
     }
-    api.orders
-      .list()
-      .then(setOrders)
+    Promise.all([
+      api.orders.list().catch(() => [] as Order[]),
+      api.selfUpload.status().catch(() => ({ exists: false } as const)),
+    ])
+      .then(([os, ss]) => {
+        setOrders(os);
+        if (ss.exists) {
+          setSelfReport({
+            report_id: ss.report_id,
+            uploaded_sections: ss.uploaded_sections,
+            report_date: ss.report_date,
+            overall_severity: ss.overall_severity,
+          });
+        }
+      })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [router]);
@@ -418,15 +519,44 @@ export default function DashboardPage() {
                 </div>
               )}
 
+              {/* Upload existing reports — banner CTA when no upload yet */}
+              {!selfReport && (
+                <Link
+                  href="/upload"
+                  className="mb-5 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/40 px-5 py-4 hover:bg-indigo-50 transition-colors group"
+                >
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
+                    <Upload className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[13px] font-bold text-indigo-900">Have older reports? Upload them</p>
+                    <p className="mt-0.5 text-[12px] text-indigo-700/80 leading-relaxed">
+                      AI reads PDFs / images of any blood test, MRI, DEXA, ECG and more — builds a partial Zen
+                      Report so you can see what your existing data already says.
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              )}
+
               {/* Section label */}
               <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-300">
-                Scan history · {totalScans} entr{totalScans === 1 ? "y" : "ies"}
+                Health log book · {totalScans + (selfReport ? 1 : 0)} entr{totalScans + (selfReport ? 1 : 0) === 1 ? "y" : "ies"}
               </p>
 
-              {/* Logbook entries */}
+              {/* Logbook entries — self-uploaded card sits above clinic scans
+                  to keep upload-first patients oriented */}
               <div className="space-y-3">
+                {selfReport && (
+                  <SelfReportEntry
+                    reportId={selfReport.report_id}
+                    uploadedSections={selfReport.uploaded_sections}
+                    reportDate={selfReport.report_date}
+                    overallSeverity={selfReport.overall_severity}
+                  />
+                )}
                 {sortedOrders.map((order, i) => (
-                  <ScanEntry key={order.id} order={order} isLatest={i === 0} />
+                  <ScanEntry key={order.id} order={order} isLatest={i === 0 && !selfReport} />
                 ))}
               </div>
 

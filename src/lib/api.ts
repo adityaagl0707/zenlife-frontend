@@ -74,6 +74,44 @@ export const api = {
       request<ChatMessage>(`/chat/${reportId}/message`, { method: "POST", body: JSON.stringify({ message }) }),
     starters: (reportId: number) => request<{ starters: string[] }>(`/chat/${reportId}/starters`),
   },
+  selfUpload: {
+    /** Read-only check — does the user already have a self-uploaded report? */
+    status: () =>
+      request<
+        { exists: false } |
+        { exists: true; report_id: number; uploaded_sections: string[]; coverage_index: number; overall_severity: string; report_date: string | null }
+      >(`/self-upload/status`),
+    /** Get-or-create the user's self-uploaded report. Returns report id. */
+    start: () =>
+      request<{ report_id: number; uploaded_sections: string[] }>(
+        `/self-upload/start`, { method: "POST" }
+      ),
+    /** Upload one PDF/image for one section. Synchronous extraction. */
+    upload: async (reportId: number, sectionType: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const token = getToken();
+      const res = await fetch(`${BASE}/self-upload/${reportId}/sections/${sectionType}/upload`, {
+        method: "POST",
+        body: fd,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!res.ok) {
+        let detail = `Upload failed (${res.status})`;
+        try { const d = await res.json(); detail = d.detail || detail; } catch {}
+        throw new Error(detail);
+      }
+      return res.json() as Promise<{ section_type: string; findings_count: number; extracted_param_count: number }>;
+    },
+    /** Run priority + plan generation; refresh organ counts. Returns coverage. */
+    finalize: (reportId: number) =>
+      request<{
+        coverage_pct: number;
+        sections_uploaded: string[];
+        overall_severity: string;
+        finding_counts: Record<string, number>;
+      }>(`/self-upload/${reportId}/finalize`, { method: "POST" }),
+  },
 };
 
 // Types
@@ -125,6 +163,12 @@ export interface Report {
   finding_counts?: { critical: number; major: number; minor: number; normal: number };
   ignored_params?: string[];
   health_plan?: HealthPlan | null;
+  /** "zenscan" (clinic-generated) or "self_uploaded" (patient uploaded
+   *  their existing reports). Self-uploaded reports get a Coverage Map
+   *  + 'not enough data' gating instead of green-checkmark organ cards. */
+  source?: "zenscan" | "self_uploaded";
+  /** Test types the patient has uploaded so far — drives the Coverage Map. */
+  uploaded_sections?: string[];
 }
 
 export interface HealthPlan {
