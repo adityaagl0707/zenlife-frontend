@@ -36,12 +36,17 @@ interface SectionState {
   findingsCount?: number;
 }
 
+// Stored once per browser when the patient accepts the accuracy disclaimer.
+// Versioned so we can re-prompt if the disclaimer text changes materially.
+const CONSENT_KEY = "zenlife_self_report_consent_v1";
+
 export default function UploadPage() {
   const router = useRouter();
   const [reportId, setReportId] = useState<number | null>(null);
   const [statuses, setStatuses] = useState<Record<string, SectionState>>({});
   const [finalizing, setFinalizing] = useState(false);
   const [globalError, setGlobalError] = useState("");
+  const [consentOpen, setConsentOpen] = useState(false);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
@@ -84,8 +89,9 @@ export default function UploadPage() {
     }
   }
 
-  async function viewReport() {
+  async function actuallyViewReport() {
     if (!reportId) return;
+    setConsentOpen(false);
     setFinalizing(true);
     try {
       await api.selfUpload.finalize(reportId);
@@ -94,6 +100,23 @@ export default function UploadPage() {
       setGlobalError(e instanceof Error ? e.message : String(e));
       setFinalizing(false);
     }
+  }
+
+  function handleViewReportClick() {
+    if (typeof window === "undefined") return;
+    const accepted = localStorage.getItem(CONSENT_KEY) === "1";
+    if (accepted) {
+      actuallyViewReport();
+    } else {
+      setConsentOpen(true);
+    }
+  }
+
+  function acceptConsent() {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CONSENT_KEY, "1");
+    }
+    actuallyViewReport();
   }
 
   const completedCount = Object.values(statuses).filter((s) => s.status === "done").length;
@@ -223,7 +246,7 @@ export default function UploadPage() {
               </p>
             </div>
             <button
-              onClick={viewReport}
+              onClick={handleViewReportClick}
               disabled={!hasAny || finalizing || anyUploading}
               className="inline-flex items-center gap-2 rounded-xl bg-zen-900 px-5 py-2.5 text-[13px] font-bold text-white hover:bg-zen-800 disabled:opacity-50 transition-colors"
             >
@@ -241,6 +264,63 @@ export default function UploadPage() {
           — covers all 8 test types in a single visit, with AI-generated priorities and a personal health plan.
         </p>
       </main>
+
+      {/* ── Accuracy disclaimer (one-time consent) ───────────────────────── */}
+      {consentOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="consent-title"
+        >
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-black/10 overflow-hidden">
+            <div className="bg-gradient-to-br from-amber-50 to-cream px-6 py-5 border-b border-amber-100">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+                  <AlertTriangle className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700">Read this before viewing</p>
+                  <h3 id="consent-title" className="mt-1 text-[18px] font-extrabold text-zen-900 leading-tight">
+                    A note on accuracy
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-3 text-[13px] text-gray-700 leading-relaxed">
+              <p>
+                This report is built from the files <strong>you</strong> upload, nothing else.
+                The AI was trained on ZenScan — a comprehensive, calibrated test panel — so its
+                interpretation of partial third-party reports can miss context, misread vendor-specific
+                formats, or under-weight findings it can&apos;t cross-check.
+                <strong> Treat the output as a starting point, not a diagnosis.</strong>
+              </p>
+              <p>
+                Always discuss anything that concerns you with a qualified medical doctor.
+                For a complete, AI-optimised assessment,{" "}
+                <Link href="/book" className="font-semibold text-zen-700 hover:underline">book a ZenScan</Link>.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-gray-50 border-t border-gray-100">
+              <button
+                onClick={() => setConsentOpen(false)}
+                className="rounded-xl px-4 py-2 text-[12px] font-semibold text-gray-500 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={acceptConsent}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-zen-900 px-5 py-2 text-[13px] font-bold text-white hover:bg-zen-800 transition-colors"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                I agree, view my report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
