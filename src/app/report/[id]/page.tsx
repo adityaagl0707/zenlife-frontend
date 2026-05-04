@@ -1000,6 +1000,60 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           </section>
         )}
 
+        {/* ── ZenScan upsell (self-uploaded only) ─────────────────────── */}
+        {report.source === "self_uploaded" && (
+          <section>
+            <div className="rounded-3xl bg-gradient-to-br from-zen-50 via-cream to-indigo-50 ring-1 ring-zen-200 overflow-hidden">
+              <div className="px-8 py-8 md:flex md:items-center md:justify-between md:gap-8">
+                <div className="mb-6 md:mb-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="h-4 w-4 text-zen-700" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zen-700">Get the complete picture</span>
+                  </div>
+                  <h3 className="font-display text-[1.8rem] leading-tight text-zen-900">
+                    This is partial.<br />Book a ZenScan.
+                  </h3>
+                  <p className="mt-2 text-[13px] text-gray-700 leading-relaxed max-w-md">
+                    A ZenScan covers all 8 test types, 300+ parameters and 11 organ systems in one
+                    visit — with calibrated AI built for the full panel, plus priorities, a personal
+                    health plan and biological-age scoring.
+                  </p>
+                  <ul className="mt-4 space-y-1.5">
+                    {[
+                      "All 8 test types — DEXA, calcium, MRI, blood, urine, ECG, USG, X-ray",
+                      "Body Age & longevity scoring",
+                      "AI calibrated on the full panel — far higher accuracy",
+                      "Personalised priorities + integrated health plan",
+                      "5–7 day report turnaround",
+                    ].map((line) => (
+                      <li key={line} className="flex items-start gap-2 text-[12px] text-gray-700">
+                        <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-zen-600 mt-0.5" />
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex flex-col gap-3 flex-shrink-0">
+                  <Link
+                    href="/book"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-zen-900 px-8 py-3.5 text-[13px] font-bold text-white hover:bg-zen-800 transition-colors"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Book ZenScan
+                  </Link>
+                  <Link
+                    href="/upload"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-zen-300 bg-white px-8 py-3 text-[12px] font-semibold text-zen-900 hover:bg-zen-50 transition-colors"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Or upload more reports
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* ── Zeno CTA ────────────────────────────────────────────────── */}
         <section>
           <div className="rounded-3xl bg-zen-900 text-white overflow-hidden">
@@ -1026,13 +1080,17 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                   <MessageCircle className="h-4 w-4" />
                   Chat with Zeno
                 </Link>
-                <Link
-                  href={`/report/${reportId}/notes`}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-8 py-3 text-[12px] font-semibold text-white hover:bg-white/10 transition-colors"
-                >
-                  <FileText className="h-4 w-4" />
-                  Doctor&apos;s Notes
-                </Link>
+                {/* Doctor's notes are written by the centre's clinical team
+                    after a ZenScan — not applicable to self-uploaded reports. */}
+                {report.source !== "self_uploaded" && (
+                  <Link
+                    href={`/report/${reportId}/notes`}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-8 py-3 text-[12px] font-semibold text-white hover:bg-white/10 transition-colors"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Doctor&apos;s Notes
+                  </Link>
+                )}
               </div>
             </div>
           </div>
