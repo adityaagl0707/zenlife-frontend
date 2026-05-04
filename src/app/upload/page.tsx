@@ -251,9 +251,9 @@ export default function UploadPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-zen-900 px-5 py-2.5 text-[13px] font-bold text-white hover:bg-zen-800 disabled:opacity-50 transition-colors"
             >
               {finalizing ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Building report…</>
+                <><Loader2 className="h-4 w-4 animate-spin" /> Generating report…</>
               ) : (
-                <><FileText className="h-4 w-4" /> View my report</>
+                <><FileText className="h-4 w-4" /> Generate my report</>
               )}
             </button>
           </div>
@@ -320,7 +320,7 @@ export default function UploadPage() {
                 className="inline-flex items-center gap-1.5 rounded-xl bg-zen-900 px-5 py-2 text-[13px] font-bold text-white hover:bg-zen-800 transition-colors"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                I agree, view my report
+                I agree, generate my report
               </button>
             </div>
           </div>

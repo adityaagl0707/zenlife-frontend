@@ -75,11 +75,14 @@ export const api = {
     starters: (reportId: number) => request<{ starters: string[] }>(`/chat/${reportId}/starters`),
   },
   selfUpload: {
-    /** Read-only check — does the user already have a self-uploaded report? */
+    /** Read-only check — does the user already have a generated self-report?
+     *  `is_visible` is true only when they've uploaded ≥1 section AND clicked
+     *  'Generate my report' at least once. The dashboard shows the SelfReportEntry
+     *  card only when is_visible is true. */
     status: () =>
       request<
-        { exists: false } |
-        { exists: true; report_id: number; uploaded_sections: string[]; coverage_index: number; overall_severity: string; report_date: string | null }
+        { exists: false; is_visible: false } |
+        { exists: true; is_visible: boolean; report_id: number; uploaded_sections: string[]; coverage_index: number; overall_severity: string; report_date: string | null }
       >(`/self-upload/status`),
     /** Get-or-create the user's self-uploaded report. Returns report id. */
     start: () =>

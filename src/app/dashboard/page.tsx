@@ -332,7 +332,10 @@ export default function DashboardPage() {
     ])
       .then(([os, ss]) => {
         setOrders(os);
-        if (ss.exists) {
+        // Only show the SelfReportEntry card after the patient has both
+        // uploaded ≥1 section AND clicked 'Generate my report' at least
+        // once. Empty drafts (created on /upload landing) stay hidden.
+        if (ss.exists && ss.is_visible) {
           setSelfReport({
             report_id: ss.report_id,
             uploaded_sections: ss.uploaded_sections,
@@ -531,25 +534,28 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Upload existing reports — banner CTA when no upload yet */}
-              {!selfReport && (
-                <Link
-                  href="/upload"
-                  className="mb-5 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/40 px-5 py-4 hover:bg-indigo-50 transition-colors group"
-                >
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
-                    <Upload className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[13px] font-bold text-indigo-900">Have older reports? Upload them</p>
-                    <p className="mt-0.5 text-[12px] text-indigo-700/80 leading-relaxed">
-                      AI reads PDFs / images of any blood test, MRI, DEXA, ECG and more — builds a partial Zen
-                      Report so you can see what your existing data already says.
-                    </p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              )}
+              {/* Upload existing reports — banner CTA, always visible
+                  regardless of ZenScan / self-upload state. When the
+                  patient already has a generated self-report below, this
+                  banner reframes as "Add more reports". */}
+              <Link
+                href="/upload"
+                className="mb-5 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/40 px-5 py-4 hover:bg-indigo-50 transition-colors group"
+              >
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
+                  <Upload className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[13px] font-bold text-indigo-900">
+                    {selfReport ? "Add more reports" : "Have older reports? Upload them"}
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-indigo-700/80 leading-relaxed">
+                    AI reads PDFs / images of any blood test, MRI, DEXA, ECG and more — builds a partial Zen
+                    Report so you can see what your existing data already says.
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
 
               {/* Section label */}
               <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-300">
