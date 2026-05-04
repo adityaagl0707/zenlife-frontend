@@ -301,6 +301,11 @@ export default function UploadPage() {
                 For a complete, AI-optimised assessment,{" "}
                 <Link href="/book" className="font-semibold text-zen-700 hover:underline">book a ZenScan</Link>.
               </p>
+              <p className="text-[12px] text-gray-500 border-t border-gray-100 pt-3">
+                <strong className="text-gray-700">Your privacy.</strong>{" "}
+                The reports you upload stay private to your account — visible only to you and never
+                shared, sold or used to train external models.
+              </p>
             </div>
 
             <div className="flex items-center justify-end gap-2 px-6 py-4 bg-gray-50 border-t border-gray-100">
