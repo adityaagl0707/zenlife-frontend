@@ -303,8 +303,8 @@ export default function UploadPage() {
               </p>
               <p className="text-[12px] text-gray-500 border-t border-gray-100 pt-3">
                 <strong className="text-gray-700">Your privacy.</strong>{" "}
-                The reports you upload stay private to your account — visible only to you and never
-                shared, sold or used to train external models.
+                Reports you upload are kept private to your account, never sold or shared,
+                and not used to train AI models.
               </p>
             </div>
 
