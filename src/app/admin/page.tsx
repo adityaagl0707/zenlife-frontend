@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical, RefreshCw, Sparkles } from "lucide-react";
+import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical, RefreshCw, Sparkles, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReportSectionsPanel, { TestStatusPanel, visibleSectionsForGender } from "@/components/admin/ReportSectionsPanel";
 import PreGenerateDrawer from "@/components/admin/PreGenerateDrawer";
@@ -1000,7 +1000,7 @@ type Patient = {
   zen_id?: string | null;
   status: PatientStatus;
   orders: { id: number; booking_id: string; status: string; has_report: boolean; report_id: number | null; is_published: boolean; tests_complete: boolean }[];
-  self_report: { report_id: number; uploaded_sections: string[]; coverage_index: number; overall_severity: string } | null;
+  self_report: { report_id: number; uploaded_sections: string[]; coverage_index: number; overall_severity: string; deleted: boolean } | null;
 };
 
 const STATUS_TABS: { key: PatientStatus | "all"; label: string; color: string }[] = [
@@ -1189,7 +1189,18 @@ export default function AdminPage() {
               }
               return (
               <div className="space-y-3">
-                {filtered.map(p => (
+                {filtered.map(p => {
+                  // Pick the report to link from the card. Priority:
+                  //   1. Published ZenScan report (most-progressed clinical view)
+                  //   2. Active (non-deleted) self-uploaded report
+                  // If a self-report exists but was deleted, render a
+                  // "Report Deleted" tombstone instead of a link.
+                  const publishedZen = p.orders.find(o => o.is_published && o.report_id);
+                  const activeSelf = p.self_report && !p.self_report.deleted ? p.self_report : null;
+                  const linkReportId = publishedZen?.report_id ?? activeSelf?.report_id ?? null;
+                  const linkLabel = publishedZen ? "Open ZenReport" : activeSelf ? "Open SelfReport" : null;
+                  const selfDeleted = p.self_report?.deleted && !publishedZen;
+                  return (
                   <div key={p.id} className="card flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-zen-800 text-white font-bold">
@@ -1228,19 +1239,46 @@ export default function AdminPage() {
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedPatient(p);
-                        if (p.orders[0]?.report_id) { setSelectedReportId(p.orders[0].report_id); setReportStep("test_status"); }
-                        else { setSelectedOrderId(p.orders[0]?.id ?? null); setReportStep("test_status"); }
-                        setView("patient");
-                      }}
-                      className="rounded-full border border-gray-200 p-2 hover:bg-gray-100"
-                    >
-                      <ChevronRight className="h-4 w-4 text-gray-500" />
-                    </button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {linkReportId && linkLabel && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPatient(p);
+                            setSelectedReportId(linkReportId);
+                            setReportStep("report");
+                            setView("patient");
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-zen-800 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-zen-700 transition-colors"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          {linkLabel}
+                        </button>
+                      )}
+                      {selfDeleted && (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-[11px] font-bold text-gray-500 line-through cursor-not-allowed"
+                          title="The patient deleted this self-uploaded report"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Report Deleted
+                        </span>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSelectedPatient(p);
+                          if (p.orders[0]?.report_id) { setSelectedReportId(p.orders[0].report_id); setReportStep("test_status"); }
+                          else { setSelectedOrderId(p.orders[0]?.id ?? null); setReportStep("test_status"); }
+                          setView("patient");
+                        }}
+                        className="rounded-full border border-gray-200 p-2 hover:bg-gray-100"
+                      >
+                        <ChevronRight className="h-4 w-4 text-gray-500" />
+                      </button>
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               );
             })()}
