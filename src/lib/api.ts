@@ -2,7 +2,10 @@ const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 function getToken() {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("zenlife_token");
+  // sessionStorage is per-tab and is set by /admin/view-as for admin's
+  // patient-impersonation tabs. Reading it first lets that tab act as
+  // the patient without disturbing the admin tab's localStorage token.
+  return sessionStorage.getItem("zenlife_token") || localStorage.getItem("zenlife_token");
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
