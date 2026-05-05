@@ -343,9 +343,6 @@ export default function LoginPage() {
                           className="w-full rounded-xl border border-black/8 bg-cream px-4 py-3 text-[14px] font-medium text-zen-900 outline-none focus:border-zen-600 focus:ring-2 focus:ring-zen-600/15 transition-all"
                           required
                         />
-                        <p className="mt-1.5 text-[11px] text-gray-400">
-                          New patients added by admin: default password is <strong className="text-gray-600">123456</strong>.
-                        </p>
                       </div>
 
                       {error && (

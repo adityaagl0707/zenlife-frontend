@@ -114,6 +114,9 @@ export const api = {
         overall_severity: string;
         finding_counts: Record<string, number>;
       }>(`/self-upload/${reportId}/finalize`, { method: "POST" }),
+    /** Patient-initiated deletion. Removes the report and all derived data. */
+    delete: (reportId: number) =>
+      request<{ deleted: true }>(`/self-upload/${reportId}`, { method: "DELETE" }),
   },
 };
 

@@ -19,6 +19,7 @@ import {
   FileText,
   Plus,
   Stethoscope,
+  Trash2,
   Upload,
 } from "lucide-react";
 import { api, Order } from "@/lib/api";
@@ -80,16 +81,33 @@ function SelfReportEntry({
   uploadedSections,
   reportDate,
   overallSeverity,
+  onDeleted,
 }: {
   reportId: number;
   uploadedSections: string[];
   reportDate: string | null;
   overallSeverity: string;
+  onDeleted: () => void;
 }) {
   const have = uploadedSections.length;
   const total = 8;
   const pct = Math.round((have / total) * 100);
   const dateParts = formatDateShort(reportDate);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function handleDelete() {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await api.selfUpload.delete(reportId);
+      onDeleted();
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete");
+      setDeleting(false);
+    }
+  }
 
   return (
     <article className="group grid grid-cols-[72px_1fr] gap-0 rounded-2xl overflow-hidden ring-2 ring-indigo-200 transition-shadow hover:shadow-md">
@@ -144,7 +162,48 @@ function SelfReportEntry({
             <Plus className="h-3.5 w-3.5" />
             Add more reports
           </Link>
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-red-600 hover:bg-red-50 transition-colors ml-auto"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete
+          </button>
         </div>
+
+        {confirming && (
+          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-[12px] font-semibold text-red-800">
+              Delete this report and all uploaded data?
+            </p>
+            <p className="mt-1 text-[11px] text-red-700/80">
+              This permanently removes your uploaded files, findings, and AI insights. This cannot be undone.
+            </p>
+            {deleteError && (
+              <p className="mt-2 text-[11px] text-red-700">{deleteError}</p>
+            )}
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3.5 py-1.5 text-[12px] font-bold text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {deleting ? "Deleting…" : "Yes, delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setConfirming(false); setDeleteError(""); }}
+                disabled={deleting}
+                className="inline-flex items-center rounded-full border border-black/10 bg-white px-3.5 py-1.5 text-[12px] font-semibold text-zen-900 hover:bg-cream transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </article>
   );
@@ -581,6 +640,7 @@ export default function DashboardPage() {
                     uploadedSections={selfReport.uploaded_sections}
                     reportDate={selfReport.report_date}
                     overallSeverity={selfReport.overall_severity}
+                    onDeleted={() => setSelfReport(null)}
                   />
                 )}
                 {sortedOrders.map((order, i) => (
