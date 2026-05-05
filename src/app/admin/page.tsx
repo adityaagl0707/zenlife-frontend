@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical, RefreshCw, Sparkles, FileText } from "lucide-react";
+import { Plus, Trash2, ChevronRight, CheckCircle2, Loader2, ArrowLeft, X, Upload, Download, FlaskConical, RefreshCw, Sparkles, FileText, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReportSectionsPanel, { TestStatusPanel, visibleSectionsForGender } from "@/components/admin/ReportSectionsPanel";
 import PreGenerateDrawer from "@/components/admin/PreGenerateDrawer";
@@ -1241,19 +1241,17 @@ export default function AdminPage() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {linkReportId && linkLabel && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPatient(p);
-                            setSelectedReportId(linkReportId);
-                            setReportStep("report");
-                            setView("patient");
-                          }}
+                        <a
+                          href={`/admin/view-as?user=${p.id}&redirect=${encodeURIComponent(`/report/${linkReportId}`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1.5 rounded-full bg-zen-800 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-zen-700 transition-colors"
                         >
                           <FileText className="h-3.5 w-3.5" />
                           {linkLabel}
-                        </button>
+                          <ExternalLink className="h-3 w-3 opacity-70" />
+                        </a>
                       )}
                       {selfDeleted && (
                         <span

@@ -6,7 +6,11 @@ export function setToken(token: string) {
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("zenlife_token");
+  // sessionStorage is per-tab. Admin opens a patient-impersonation tab
+  // via /admin/view-as which stashes a short-lived patient token here.
+  // That tab uses the patient token while the admin tab keeps using
+  // localStorage (no clobbering).
+  return sessionStorage.getItem("zenlife_token") || localStorage.getItem("zenlife_token");
 }
 
 export function clearToken() {
