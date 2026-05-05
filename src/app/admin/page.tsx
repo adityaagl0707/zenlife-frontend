@@ -1006,7 +1006,7 @@ type Patient = {
 const STATUS_TABS: { key: PatientStatus | "all"; label: string; color: string }[] = [
   { key: "all", label: "All", color: "bg-gray-100 text-gray-800" },
   { key: "registered_unpaid", label: "Registered · Not Paid", color: "bg-slate-100 text-slate-800" },
-  { key: "self_uploaded_report", label: "Registered · SelfReport", color: "bg-indigo-100 text-indigo-800" },
+  { key: "self_uploaded_report", label: "Registered · SelfReport", color: "bg-selfreport-100 text-selfreport-800" },
   { key: "paid_test_pending", label: "Paid · Test Pending", color: "bg-amber-100 text-amber-800" },
   { key: "test_done_report_awaited", label: "Test Done · Report Awaited", color: "bg-blue-100 text-blue-800" },
   { key: "report_published", label: "Report Published", color: "bg-emerald-100 text-emerald-800" },
@@ -1014,7 +1014,7 @@ const STATUS_TABS: { key: PatientStatus | "all"; label: string; color: string }[
 
 const STATUS_BADGE: Record<PatientStatus, { label: string; cls: string }> = {
   registered_unpaid: { label: "Registered · Not Paid", cls: "bg-slate-100 text-slate-700" },
-  self_uploaded_report: { label: "Registered · SelfReport", cls: "bg-indigo-100 text-indigo-700" },
+  self_uploaded_report: { label: "Registered · SelfReport", cls: "bg-selfreport-100 text-selfreport-700" },
   paid_test_pending: { label: "Paid · Test Pending", cls: "bg-amber-100 text-amber-700" },
   test_done_report_awaited: { label: "Test Done · Report Awaited", cls: "bg-blue-100 text-blue-700" },
   report_published: { label: "Report Published", cls: "bg-emerald-100 text-emerald-700" },
@@ -1222,7 +1222,7 @@ export default function AdminPage() {
                               reflects ZenScan progression; this surfaces the
                               self-uploaded one alongside it. */}
                           {p.self_report && p.status !== "self_uploaded_report" && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 bg-indigo-100 text-indigo-700">
+                            <span className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 bg-selfreport-100 text-selfreport-700">
                               + SelfReport
                             </span>
                           )}
@@ -1232,7 +1232,7 @@ export default function AdminPage() {
                           {p.orders.length} order{p.orders.length !== 1 ? "s" : ""} ·{" "}
                           {p.orders.filter(o => o.has_report).length + (p.self_report ? 1 : 0)} report{(p.orders.filter(o => o.has_report).length + (p.self_report ? 1 : 0)) !== 1 ? "s" : ""}
                           {p.self_report && (
-                            <span className="text-indigo-600">
+                            <span className="text-selfreport-600">
                               {" "}· {p.self_report.uploaded_sections.length}/8 self-uploaded
                             </span>
                           )}

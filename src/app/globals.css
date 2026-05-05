@@ -14,6 +14,20 @@
   --gold-500: #d97706;
   --gold-400: #f59e0b;
   --gold-50: #fffbeb;
+  /* Self-uploaded report accent — replaces the previous indigo theme.
+     Centered on #FE8A70 (the brand color requested for the SelfReport
+     surface). Other shades are derived to mirror Tailwind's scale so
+     existing indigo-50/100/.../700 usages map cleanly. */
+  --selfreport-50: #fff5f2;
+  --selfreport-100: #ffe6df;
+  --selfreport-200: #ffcdbf;
+  --selfreport-300: #ffae9a;
+  --selfreport-400: #fe8a70;
+  --selfreport-500: #f86a4d;
+  --selfreport-600: #ea4f30;
+  --selfreport-700: #c43c23;
+  --selfreport-800: #9c3220;
+  --selfreport-900: #7d2b1e;
   --cream: #f8f7f4;
   --cream-dark: #f0ede8;
   --ink: #1a1614;
@@ -38,6 +52,16 @@
   --color-gold-500: var(--gold-500);
   --color-gold-400: var(--gold-400);
   --color-gold-50: var(--gold-50);
+  --color-selfreport-50: var(--selfreport-50);
+  --color-selfreport-100: var(--selfreport-100);
+  --color-selfreport-200: var(--selfreport-200);
+  --color-selfreport-300: var(--selfreport-300);
+  --color-selfreport-400: var(--selfreport-400);
+  --color-selfreport-500: var(--selfreport-500);
+  --color-selfreport-600: var(--selfreport-600);
+  --color-selfreport-700: var(--selfreport-700);
+  --color-selfreport-800: var(--selfreport-800);
+  --color-selfreport-900: var(--selfreport-900);
   --color-cream: var(--cream);
   --color-cream-dark: var(--cream-dark);
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
