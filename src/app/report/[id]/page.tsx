@@ -936,10 +936,10 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         })()}
 
         {/* ── Health Priorities ───────────────────────────────────────── */}
-        {/* Self-uploaded reports below 25% coverage skip priorities to
-            avoid generating advice from a single CBC. The Coverage Map
-            above already nudges them to upload more or book a ZenScan. */}
-        {priorities.length > 0 && !(report.source === "self_uploaded" && (report.uploaded_sections?.length ?? 0) < 2) && (
+        {/* Self-uploaded reports show priorities once at least one
+            section is uploaded. The Coverage Map above still nudges
+            them to upload more or book a ZenScan for a fuller picture. */}
+        {priorities.length > 0 && !(report.source === "self_uploaded" && (report.uploaded_sections?.length ?? 0) < 1) && (
           <section id="priorities">
             <SectionHeading
               label="Action Plan"
@@ -955,11 +955,11 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         )}
 
         {/* ── Low-coverage upsell (self-uploaded only, blocks priorities) ── */}
-        {report.source === "self_uploaded" && (report.uploaded_sections?.length ?? 0) < 2 && (
+        {report.source === "self_uploaded" && (report.uploaded_sections?.length ?? 0) < 1 && (
           <section id="coverage-upsell">
             <div className="rounded-2xl bg-gradient-to-br from-selfreport-50 to-cream ring-1 ring-selfreport-200 p-6 text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-selfreport-700 mb-2">More data needed</p>
-              <h3 className="text-[20px] font-extrabold text-zen-900">Health priorities unlock at 2+ test types</h3>
+              <h3 className="text-[20px] font-extrabold text-zen-900">Upload at least one report to unlock priorities</h3>
               <p className="mt-2 text-[13px] text-gray-600 leading-relaxed max-w-md mx-auto">
                 A single test isn&apos;t enough to safely generate a personal action plan. Upload one or two more reports
                 — or book a ZenScan to fill all 8 in one visit.
